@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>Chinese Language Learning</title>
+    <style>
+        /* Giữ nguyên CSS cũ */
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --card-bg: #f5f5f5;
+            --selected-color: #3498db;
+            --correct-color: #2ecc71;
+        }
+
+        .dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --card-bg: #2d2d2d;
+        }
+
+        body {
+            font-family: Arial,'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h3 {
+            color: white;
+            font-size: 25px;
+        }
+
+        .container {
+            margin: 0 auto;
+            max-width: 1200px;
+            //max-height: 1500px;
+            background-color: var(--bg-color);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 40px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Thêm style cho dropdown */
+        #lessonSelect {
+            width: 300px;
+            height: 60px;
+            font-size: 30px;
+            text-align: left;
+            border-radius: 10px;
+            border: 3px solid #3498db;
+            margin: 0 10px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        #lessonSelect option {
+            font-size: 25px;
+            padding: 10px;
+        }
+
+        /* Giữ nguyên phần CSS còn lại */
+        #questionCount {
+            width: 120px;
+            height: 60px;
+            font-size: 55px;
+            text-align: center;
+            border-radius: 10px;
+            border: 3px solid #3498db;
+            margin: 0 10px;
+        }
+
+        #startBtn {
+            background-color: #e67e22;
+            color: white;
+        }
+
+        #confirmTimer {
+            background-color: #10d60d;
+            color: white;
+        }
+
+        #cancelTimer {
+            background-color: #e67e22;
+            color: white;
+        }
+
+        #dataBtn {
+            background-color: #2ecc71;
+            color: white;
+            display: none;
+        }
+
+        #darkModeBtn {
+            background-color: #34495e;
+            color: white;
+        }
+
+        /* Giữ nguyên phần CSS còn lại từ code cũ */
+        .student-name {
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px auto;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            font-size: 30px;
+            font-family: Arial, sans-serif;
+            border: 2px solid #0ca3fa;
+            height: 35px;
+           display: none;
+        }
+
+        .timer {
+            font-size: 40px;
+            text-align: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 8px;
+            width: 100px;
+            margin: 0 auto;
+            transition: transform 0.2s;
+            color: red;
+            border: 3px solid #faa20a;
+        }
+
+        .timer:hover {
+            transform: scale(1.05);
+        }
+
+        .questions {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .question {
+            margin: 15px 0;
+            font-size: 60px;
+            background-color: var(--card-bg);
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            font-family: 'Kaiti', sans-serif;
+        }
+
+        .question-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .question-number {
+            flex-shrink: 0;
+            min-width: 30px;
+            font-size: 60px;
+        }
+
+        .question-text {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .blank {
+            display: inline-block;
+            min-width: 60px;
+            width: auto;
+            padding: 0 10px;
+            height: 70px;
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            vertical-align: middle;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .blank.selected {
+            background-color: var(--selected-color);
+            border-color: var(--selected-color);
+            color: white;
+        }
+
+        .blank.correct {
+            background-color: var(--correct-color);
+            border-color: var(--correct-color);
+            color: white;
+            cursor: default;
+        }
+
+        .answers {
+            display: none;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            font-size: 50px;
+            font-family: 'Kaiti', sans-serif;
+        }
+
+        .answer {
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
+            border: 2px dashed #3498db;
+        }
+
+        .answer:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .answer.selected {
+            background-color: var(--selected-color);
+            border-color: var(--selected-color);
+            color: white;
+        }
+
+        .timer-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #b3c0c4;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+        }
+
+        .timer-dialog input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="controls">
+                <button id="startBtn">Bắt đầu</button>
+                <select id="lessonSelect">
+                    <option value="1">Bài 1: 老师您好！Em chào thầy ạ!</option>
+                </select>
+                <input type="number" id="questionCount" min="2" max="10" value="5" title="Số câu hỏi"/>
+                <button id="dataBtn">Dữ liệu</button>
+            </div>
+            <button id="darkModeBtn">🌙</button>
+        </div>
+
+        <div class="student-name" id="studentName">Người may mắn</div>
+        <div class="timer" id="timer">5:00</div>
+
+        <div class="timer-dialog" id="timerDialog">
+            <h3>Cài đặt thời gian</h3>
+            <input type="number" id="timerInput" min="1" max="1800" placeholder="Nhập thời gian từ 1- 1800s">
+            <button id="confirmTimer">Đặt</button>
+            <button id="cancelTimer">Hủy</button>
+        </div>
+
+        <div class="questions" id="questions"></div>
+        <div class="answers" id="answers"></div>
+    </div>
+
+    <script>
+        // Giữ nguyên các biến và hàm từ code cũ
+        let timer;
+        let timeLeft = 300;
+        let isDarkMode = false;
+        let questions = [];
+        let answers = new Set();
+        let isGameStarted = false;
+        let selectedBlank = null;
+        let selectedAnswer = null;
+        let allQuestions = [];
+        let usedQuestions = new Set();
+        let QUESTIONS_PER_GAME = 6;
+
+        // Thêm dữ liệu cho các bài học
+        const lessonData = {
+1: [
+    "/你/好。",
+    "再/见/",
+    "你好/吗/？",
+    "那/不是/陈楠。",
+    "我不是老师，我是/学生/。",
+    "我/很/好。",
+    "我是/国安/。",
+    "/老师/，您好。"
+  ],
+  2: [
+    "你/叫/什么名字？",
+    "我叫阮文明，你/呢？/",
+    "你/好/吗？",
+    "你/最近/怎么样？",
+    "你最近好/吗/？",
+    "一切/都/好",
+    "这/是/我的爸爸。",
+    "那是我/的/弟弟。",
+    "/这/不是我的老师。",
+    "那是你的/哥哥/吗？"
+  ],
+  3: [
+    "你/有/弟弟吗？",
+    "他/只/有一/个/妹妹。",
+    "他/有没有/姐姐？",
+    "你有/兄弟姐妹/吗？",
+    "我有一个弟弟/和/一个妹妹。",
+    "我/没有/哥哥，我只有一个弟弟。",
+    "他没有哥哥，我/也/没有哥哥。",
+    "我没有兄弟姐妹，我是/独生子/。",
+    "你家有几/口/人？",
+    "我/有/四/口人：爸爸，妈妈，弟弟和/我。",
+    "你今年/多大/？",
+    "他今年/三十五/岁。",
+    "他/做/什么工作？",
+    "我弟弟是/学生/，我/姐姐/是老师。",
+    "他不/工作/，他是学生。",
+    "他哥哥/在/失业。",
+    "我和他的妈妈/都/是医生。",
+    "我爷爷不工作，他/退休/了。"
+  ]
+};
+
+        // Thêm hàm để load câu hỏi theo bài học
+// Sửa đổi hàm loadLessonQuestions
+function loadLessonQuestions(lessonNumber) {
+    const lessonQuestions = lessonData[lessonNumber];
+    if (!lessonQuestions) return;
+    
+    // Tự động cập nhật số câu hỏi tối đa dựa trên số câu trong bài học
+    const maxQuestions = lessonQuestions.length;
+    const questionCountInput = document.getElementById('questionCount');
+    questionCountInput.max = maxQuestions;
+    
+    // Nếu số câu đang chọn lớn hơn số câu có sẵn, cập nhật lại giá trị
+    if (parseInt(questionCountInput.value) > maxQuestions) {
+        questionCountInput.value = maxQuestions;
+        QUESTIONS_PER_GAME = maxQuestions;
+    }
+    
+    allQuestions = lessonQuestions.map(q => parseQuestion(q));
+    usedQuestions.clear();
+    questions = selectRandomQuestions();
+    createQuestionElements();
+}
+
+        // Sửa đổi event listener cho dropdown
+document.getElementById('lessonSelect').addEventListener('change', (e) => {
+    const lessonNumber = parseInt(e.target.value);
+    loadLessonQuestions(lessonNumber);
+    resetGame();
+});
+
+        // Giữ nguyên các hàm từ code cũ
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function parseQuestion(text) {
+            const parts = text.split('/');
+            const result = {
+                text: '',
+                answers: [],
+                fullText: text
+            };
+            
+            let currentIndex = 0;
+            for (let i = 0; i < parts.length; i++) {
+                if (i % 2 === 0) {
+                    result.text += parts[i];
+                    if (i < parts.length - 1) {
+                        result.text += '____';
+                    }
+                } else {
+                    result.answers.push({
+                        answer: parts[i],
+                        position: currentIndex + parts[i-1].length
+                    });
+                    answers.add(parts[i]);
+                }
+                currentIndex += parts[i].length;
+            }
+            return result;
+        }
+
+        // Giữ nguyên các hàm còn lại từ code cũ
+        function selectRandomQuestions() {
+            const availableQuestions = allQuestions.filter(q => !usedQuestions.has(q.fullText));
+            
+            if (availableQuestions.length < QUESTIONS_PER_GAME) {
+                usedQuestions.clear();
+                return selectRandomQuestions();
+            }
+            
+            const selectedQuestions = shuffleArray([...availableQuestions])
+                .slice(0, QUESTIONS_PER_GAME);
+                
+            selectedQuestions.forEach(q => usedQuestions.add(q.fullText));
+            
+            return selectedQuestions;
+        }
+
+        // Giữ nguyên tất cả các hàm xử lý từ code cũ
+        function handleBlankClick(blank) {
+            if (blank.classList.contains('correct')) return;
+
+            if (selectedBlank) {
+             selectedBlank.classList.remove('selected');
+            }
+
+            blank.classList.add('selected');
+            selectedBlank = blank;
+
+            if (selectedAnswer) {
+                tryMatch();
+            }
+        }
+
+        function handleAnswerClick(answer) {
+            if (answer.classList.contains('used')) return;
+
+            if (selectedAnswer) {
+                selectedAnswer.classList.remove('selected');
+            }
+
+            answer.classList.add('selected');
+            selectedAnswer = answer;
+
+            if (selectedBlank) {
+                tryMatch();
+            }
+        }
+
+        function tryMatch() {
+            if (!selectedBlank || !selectedAnswer) return;
+
+            if (selectedBlank.dataset.answer === selectedAnswer.textContent) {
+                selectedBlank.textContent = selectedAnswer.textContent;
+                selectedBlank.classList.remove('selected');
+                selectedBlank.classList.add('correct');
+                selectedAnswer.classList.remove('selected');
+                selectedAnswer.classList.add('used');
+                selectedAnswer.style.display = 'none';
+
+                selectedBlank = null;
+                selectedAnswer = null;
+
+                const allCorrect = Array.from(document.querySelectorAll('.blank'))
+                    .every(b => b.classList.contains('correct'));
+                if (allCorrect) {
+                    setTimeout(() => {
+                        alert('Chúc mừng bạn đã hoàn thành!');
+                        clearInterval(timer);
+                    }, 100);
+                }
+            } else {
+                selectedBlank.classList.remove('selected');
+                selectedAnswer.classList.remove('selected');
+                selectedBlank = null;
+                selectedAnswer = null;
+            }
+        }
+
+        function createQuestionElements() {
+            const questionsContainer = document.getElementById('questions');
+            const answersContainer = document.getElementById('answers');
+            
+            questionsContainer.innerHTML = '';
+            answersContainer.innerHTML = '';
+            answers = new Set();
+            
+            questions.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                
+                const questionContent = document.createElement('div');
+                questionContent.className = 'question-content';
+                
+                const questionNumber = document.createElement('div');
+                questionNumber.className = 'question-number';
+                questionNumber.textContent = `${index + 1}.`;
+                
+                const questionText = document.createElement('div');
+                questionText.className = 'question-text';
+                
+                const blanks = [];
+                q.answers.forEach(ans => {
+                    const blank = document.createElement('div');
+                    blank.className = 'blank';
+                    blank.dataset.answer = ans.answer;
+                    blank.addEventListener('click', () => handleBlankClick(blank));
+                    blanks.push(blank);
+                    answers.add(ans.answer);
+                });
+                
+                const parts = q.text.split('____');
+                parts.forEach((part, i) => {
+                    if (part) {
+                        const textSpan = document.createElement('span');
+                        textSpan.textContent = part;
+                        questionText.appendChild(textSpan);
+                    }
+                    if (i < blanks.length) {
+                        questionText.appendChild(blanks[i]);
+                    }
+                });
+                
+                questionContent.appendChild(questionNumber);
+                questionContent.appendChild(questionText);
+                questionDiv.appendChild(questionContent);
+                questionsContainer.appendChild(questionDiv);
+            });
+            
+            const shuffledAnswers = shuffleArray(Array.from(answers));
+            shuffledAnswers.forEach(answer => {
+                const answerDiv = document.createElement('div');
+                answerDiv.className = 'answer';
+                answerDiv.textContent = answer;
+                answerDiv.addEventListener('click', () => handleAnswerClick(answerDiv));
+                answersContainer.appendChild(answerDiv);
+            });
+        }
+
+        function showTimerDialog() {
+            const dialog = document.getElementById('timerDialog');
+            const input = document.getElementById('timerInput');
+            input.value = timeLeft;
+            dialog.style.display = 'block';
+        }
+
+        function hideTimerDialog() {
+            document.getElementById('timerDialog').style.display = 'none';
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            updateTimerDisplay();
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    alert('Hết giờ!');
+                }
+            }, 1000);
+        }
+
+ function resetGame() {
+    clearInterval(timer);
+    timeLeft = 300;
+    updateTimerDisplay();
+    
+    document.getElementById('questions').style.display = 'none';
+    document.getElementById('answers').style.display = 'none';
+    
+    selectedBlank = null;
+    selectedAnswer = null;
+    
+    const questionCountInput = document.getElementById('questionCount');
+    const maxQuestions = lessonData[document.getElementById('lessonSelect').value].length;
+    let newCount = parseInt(questionCountInput.value);
+    
+    if (newCount && newCount >= 1) {
+        if (newCount > maxQuestions) {
+            newCount = maxQuestions;
+            questionCountInput.value = maxQuestions;
+        }
+        QUESTIONS_PER_GAME = newCount;
+    } else {
+        questionCountInput.value = QUESTIONS_PER_GAME;
+    }
+    
+    questions = selectRandomQuestions();
+    createQuestionElements();
+    
+    isGameStarted = false;
+}
+
+        // Event Listeners
+        document.getElementById('timer').addEventListener('click', showTimerDialog);
+
+        document.getElementById('confirmTimer').addEventListener('click', () => {
+            const newTime = parseInt(document.getElementById('timerInput').value);
+            if (newTime && !isNaN(newTime) && newTime >= 1 && newTime <= 1800) {
+                timeLeft = newTime;
+                updateTimerDisplay();
+                if (isGameStarted) {
+                    startTimer();
+                }
+            }
+            hideTimerDialog();
+        });
+
+        document.getElementById('cancelTimer').addEventListener('click', hideTimerDialog);
+
+        document.getElementById('darkModeBtn').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            isDarkMode = !isDarkMode;
+            document.getElementById('darkModeBtn').textContent = isDarkMode ? '☀️' : '🌙';
+        });
+
+document.getElementById('questionCount').addEventListener('change', (e) => {
+    const maxQuestions = lessonData[document.getElementById('lessonSelect').value].length;
+    let newCount = parseInt(e.target.value);
+    
+    if (newCount && newCount >= 1) {
+        // Nếu số câu nhập vào lớn hơn số câu có sẵn, gán bằng số câu tối đa
+        if (newCount > maxQuestions) {
+            newCount = maxQuestions;
+            e.target.value = maxQuestions;
+        }
+        QUESTIONS_PER_GAME = newCount;
+    } else {
+        e.target.value = QUESTIONS_PER_GAME;
+    }
+});
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            resetGame();
+            
+            document.getElementById('questions').style.display = 'block';
+            document.getElementById('answers').style.display = 'flex';
+            
+            const studentName = document.getElementById('studentName');
+            const names = ['Nguyễn Đức Thành', 
+                'Nguyễn Khánh Phương', 
+                'Nguyễn Phương Nhi', 
+                'Nghiêm Diệu Linh', 
+                'Nguyễn Minh Hằng', 
+                'Nguyễn Đức Trung', 
+                'Hoàng Minh Thái', 
+                'Nguyễn Đức Bảo Phong', 
+                'Tạ Thị Ngọc Anh', 
+                'Vương Thanh Hà', 
+                'Hoàng Tuấn Thành', 
+                'Nguyễn Thị Trang', 
+                'Hoàng Thế Anh Quân', 
+                'Trịnh Công Minh', 
+                'Trịnh Anh Kiệt'];
+            let count = 0;
+            
+            const nameInterval = setInterval(() => {
+                studentName.textContent = names[count % names.length];
+                count++;
+                if (count > 6) {
+                    clearInterval(nameInterval);
+                }
+            }, 300);
+
+            startTimer();
+            isGameStarted = true;
+        });
+
+        // Khởi tạo ban đầu
+        loadLessonQuestions(1);
+        resetGame();
+    </script>
+</body>
+</html>

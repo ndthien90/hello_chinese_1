@@ -1,0 +1,15 @@
+桌子|cái bàn|zhuōzǐ|chuōzi|*zhuōzi|ruòzi
+椅子|cái ghế|yīzi|*yǐzi|yìzi|yìnzi
+书包|cặp sách|shūpāo|shùbāo|*shūbāo|shǔbāo
+铅笔|bút chì|*qiānbǐ|qiánbǐ|qiǎnbǐ|qiànpǐ
+手机|điện thoại|shǒijī|shǒujǐ|*shǒujī|shǒují
+电脑|máy tính|diǎnnào|*diànnǎo|diànnáo|diānnāo
+学校|trường học|*xuéxiào|xuéxiāo|xuéxiǔ|xuéxiao
+老师|giáo viên|*lǎoshī|lǎoshǐ|láoshī|làoshī
+同学|bạn học|tóngxuě|tǒngxué|*tóngxué|tōngxué
+朋友|bạn bè|*péngyou|péngyòu|pěngyǒu|péngyú
+咖啡|cà phê|*kāfēi|kāféi|kǎfēi|kǎféi
+水果|hoa quả|*shuǐguǒ|shuīguǒ|shuǐguò|shuǐguó
+图书馆|thư viện|*túshūguǎn|túshūguàn|túshūguán|túshūguǎi
+飞机|máy bay|*fēijī|fēijī|fěijī|fēijǐ
+超市|siêu thị|cháoshì|chǎoshì|*chāoshì|chāoshí

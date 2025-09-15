@@ -1,0 +1,15 @@
+老师|thầy/cô giáo|láoshī|lǎoshí|*lǎoshī|lǎoshǐ
+生日|sinh nhật|shēngrǐ|shéngrì|*shēngrì|shēngrí
+商店|cửa hàng|shāngdiàn|shǎngdiàn|*shāngdiàn|shāngdiǎn
+中文|tiếng Trung|zhǒngwén|zhōngwěn|*zhōngwén|zhōngwèn
+学生|học sinh|xuéshēng|xuéshéng|*xuéshēng|xuéshěng
+再见|tạm biệt|zàijiàn|zàijiǎn|*zàijiàn|zàijiǎng
+同学|bạn học|tóngxué|tóngxuě|*tóngxué|tóngxuè
+医生|bác sĩ|yīshēng|yīshéng|*yīshēng|yīshěng
+人们|mọi người|rénměn|rénmēn|*rénmen|rénmèn
+餐厅|nhà ăn|cāntīng|cānténg|*cāntīng|cāntǐng
+书包|cặp sách|shūbāo|shǔbāo|*shūbāo|shūbào
+手机|điện thoại|shǒujǐ|shǒujī|*shǒujī|shǒujì
+商人|thương nhân|shāngrén|shāngrán|*shāngrén|shāngrěn
+银行|ngân hàng|yínháng|yíngháng|*yínháng|yǐnháng
+司机|tài xế|shījī|sìjī|*sījī|shíjī

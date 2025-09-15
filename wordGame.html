@@ -1,0 +1,490 @@
+<!DOCTYPE html><html lang="vi"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sắp xếp từ tiếng Trung</title>
+    <style>
+:root {
+    --bg-color: #f0f0f0;
+    --container-bg: white;
+    --text-color: black;
+    --border-color: #007bff;
+    --button-bg: #007bff;
+    --button-hover: #0056b3;
+    --word-border: #007bff;
+    --word-hover-bg: #4CAF50;
+    --word-hover-text: white;
+}
+
+[data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --container-bg: #2d2d2d;
+    --text-color: #ffffff;
+    --border-color: #4a9eff;
+    --button-bg: #4a9eff;
+    --button-hover: #2d8bff;
+    --word-border: #4a9eff;
+    --word-hover-bg: #45a049;
+    --word-hover-text: #ffffff;
+}
+
+
+.theme-toggle {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .container {
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 600px;
+            min-height: 550px;
+            width: 100%;
+            background-color: var(--container-bg);
+        }
+        h1 {
+            font-family: Arial, sans-serif;
+            margin-bottom: 20px;
+            color: #f26a02;
+            font-size: 25px;
+        }
+        #studentName {
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            border: 2px solid #007bff;
+            padding: 10px;
+            border-radius: 5px;
+            width: 90%;
+            margin: 10px auto;
+            display: none;
+            color: var(--text-color);
+            border-color: var(--border-color);
+            background-color: var(--container-bg);
+        }
+        select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+        #lessonSelect {
+            width: calc(60% - 24px);
+            margin: 10px 0;
+        }
+        #modeSelect {
+            width: 120px;
+            margin-right: 10px;
+            display:none;
+        }
+        .control-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, transform 0.3s;
+            min-width: 120px;
+            background-color: var(--button-bg);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            background-color: var(--button-hover);
+        }
+        #wordContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .word {
+            background-color: transparent;
+            margin: 5px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: background-color 0.3s;
+            border: 2px dashed #007bff;
+           border-color: var(--word-border);
+           color: var(--text-color);
+        }
+        .word:hover {
+           background-color: var(--word-hover-bg);
+           color: var(--word-hover-text);
+        }
+        #result, #message {
+            margin-top: 20px;
+            font-size: 25px;
+        }
+        #result {
+            font-family: '楷体', sans-serif;
+            font-size: 35px;
+            color: #fa2c02;
+        }
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s ease;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 0 auto;
+            font-size: 16px;
+            background-color: transparent;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #007bff;
+            color: white;
+        }
+        .stat-item {
+            background-color: #22a4e0;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 5px 5px rgba(0,0,0,0.1);
+            max-width: 150px;
+            min-width: 120px
+        }
+    </style>
+</head>
+<body>    <div class="container">
+        <h1>Xếp từ thành câu</h1>
+        <select id="lessonSelect" onchange="loadLesson()">
+            <option value="lesson1">Bài 1: 老师您好！Em chào thầy ạ!</option>
+        </select>
+<div class="control-row">
+    <select id="modeSelect" onchange="changeMode()">
+        <option value="study">Tự học</option>
+        <option value="test">Kiểm tra</option>
+    </select>
+    <button onclick="startNewGame()">Bắt đầu</button>
+    <button onclick="toggleTheme()" id="themeToggle" class="theme-toggle">🌙</button>
+</div>
+        <div class="stats">
+            <div class="stat-item">Câu: <span id="questionCount">0/0</span></div>
+            <div class="stat-item">Chính xác: <span id="accuracyRate">0%</span></div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div id="studentName">Tên học sinh</div>
+        <div id="wordContainer"></div>
+        <div id="result"></div>
+        <div id="message"></div>
+        <button onclick="nextQuestion()" id="nextButton" style="display: none;">Câu tiếp theo</button>
+        <button onclick="resetGame()" id="resetButton" style="display: none;">Thử lại</button>
+    </div>
+
+    <script>
+        const lessonData = {
+  lesson1: [
+    "你/好/。",
+    "再/见/。",
+    "老师，/您/好。",
+    "你/好/吗？",
+    "这/是/书/吗？",
+    "这/不/是/书。",
+    "那/是/陈楠。",
+    "你/是/学生/吗？",
+    "不是，/我/是/老师。",
+    "国安，/你/好。",
+    "国安/不/是/老师。",
+    "我/很/好。"
+  ],
+  lesson2: [
+    "你/叫/什么/名字？",
+    "我/叫/阮文明/，你/呢？",
+    "你/好/吗？",
+    "你/最近/怎么样？",
+    "你/最近/好/吗？",
+    "一/切/都/好",
+    "这/是/我/的/爸爸。",
+    "那/是/我/的/弟弟。",
+    "这/不/是/我/的/老师。",
+    "那/是/你/的/哥哥/吗？"
+  ],
+  lesson3: [
+    "你/有/弟弟/吗？",
+    "他/只/有/一/个/妹妹。",
+    "他/有没有/姐姐？",
+    "你/有/兄弟/姐妹/吗？",
+    "我/有/一/个/弟弟/和/一/个/妹妹。",
+    "我/没有/哥哥，/我/只/有/一/个/弟弟。",
+    "他/没有/哥哥，/我/也/没有/哥哥。",
+    "我/没有/兄弟姐妹，/我/是/独生子。",
+    "你/家/有/几口人？",
+    "我/家/有/四口人：/爸爸，/妈妈，/弟弟/和/我。",
+    "你/今年/多大？",
+    "他/今年/三十五/岁。",
+    "他/做/什么/工作？",
+    "我/弟弟/是/学生，/我/姐姐/是/老师。",
+    "他/不/工作，/他/是/学生。",
+    "他/哥哥/在/失业。",
+    "我和他/的/妈妈/都/是/医生。",
+    "我/哥哥/是/公安，/他/哥哥/是/部队。",
+    "我/爷爷/不/工作，/他/退休/了。"
+  ],
+
+};
+
+        const students = [
+            'Nguyễn Đức Thành', 'Nguyễn Khánh Phương', 'Nguyễn Phương Nhi',
+            'Nghiêm Diệu Linh', 'Nguyễn Minh Hằng', 'Nguyễn Đức Trung',
+            'Hoàng Minh Thái', 'Nguyễn Đức Bảo Phong', 'Tạ Thị Ngọc Anh',
+            'Vương Thanh Hà', 'Hoàng Tuấn Thành', 'Nguyễn Thị Trang',
+            'Hoàng Thế Anh Quân', 'Trịnh Công Minh', 'Trịnh Anh Kiệt'
+        ];
+
+        let originalSentence = '';
+        let shuffledWords = [];
+        let userSentence = [];
+        let currentLessonSentences = [];
+        let currentQuestionIndex = 0;
+        let correctAnswers = 0;
+        let totalQuestions = 0;
+        let totalAnswers = 0;
+        let currentMode = 'study';
+// Thêm vào phần script hiện có
+function toggleTheme() {
+    const html = document.documentElement;
+    const themeToggle = document.getElementById('themeToggle');
+    
+    if (html.getAttribute('data-theme') === 'dark') {
+        html.removeAttribute('data-theme');
+        themeToggle.textContent = '🌙';
+        localStorage.setItem('theme', 'light');
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        themeToggle.textContent = '☀️';
+        localStorage.setItem('theme', 'dark');
+    }
+}
+        function changeMode() {
+            currentMode = document.getElementById('modeSelect').value;
+            const studentNameElement = document.getElementById('studentName');
+            studentNameElement.style.display = currentMode === 'test' ? 'inline-block' : 'none';
+        }
+        function loadLesson() {
+            const lessonSelect = document.getElementById('lessonSelect');
+            const selectedLesson = lessonSelect.value;
+            currentLessonSentences = [...lessonData[selectedLesson]];
+            currentQuestionIndex = 0;
+            correctAnswers = 0;
+            totalAnswers = 0;
+            totalQuestions = currentLessonSentences.length;
+            updateStats();
+        }
+
+        function startNewGame() {
+            loadLesson();
+            showNextQuestion();
+            document.getElementById('nextButton').style.display = 'none';
+            document.getElementById('resetButton').style.display = 'inline-block';
+            updateProgressBar();
+
+            if (currentMode === 'test') {
+                let interval;
+                const duration = 1000;
+                const endTime = Date.now() + duration;
+                const studentNameDisplay = document.getElementById('studentName');
+                
+                interval = setInterval(() => {
+                    const randomStudent = students[Math.floor(Math.random() * students.length)];
+                    studentNameDisplay.textContent = randomStudent;
+                    
+                    if (Date.now() >= endTime) {
+                        clearInterval(interval);
+                        const finalStudent = students[Math.floor(Math.random() * students.length)];
+                        studentNameDisplay.textContent = finalStudent;
+                    }
+                }, 50);
+            }
+        }
+
+        function showNextQuestion() {
+            if (currentQuestionIndex < currentLessonSentences.length) {
+                originalSentence = currentLessonSentences[currentQuestionIndex];
+                separateAndShuffleWords();
+                updateStats();
+                updateProgressBar();
+            } else {
+                finishLesson();
+            }
+        }
+
+        function separateAndShuffleWords() {
+            let words = originalSentence.split('/').filter(word => word.trim() !== '');
+            
+            shuffledWords = [...words];
+            for (let i = shuffledWords.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledWords[i], shuffledWords[j]] = [shuffledWords[j], shuffledWords[i]];
+            }
+
+            userSentence = [];
+            displayWords();
+            document.getElementById('result').textContent = '';
+            document.getElementById('message').textContent = '';
+        }
+
+        function displayWords() {
+            const wordContainer = document.getElementById('wordContainer');
+            wordContainer.innerHTML = '';
+            shuffledWords.forEach(word => {
+                const wordElement = document.createElement('span');
+                wordElement.className = 'word';
+                wordElement.textContent = word;
+                wordElement.onclick = () => addToSentence(word);
+                wordContainer.appendChild(wordElement);
+            });
+        }
+
+        function addToSentence(word) {
+            userSentence.push(word);
+            document.getElementById('result').textContent = userSentence.join('');
+            removeWord(word);
+            if (shuffledWords.length === 0) {
+                checkSentence();
+            }
+        }
+
+        function removeWord(word) {
+            const index = shuffledWords.indexOf(word);
+            if (index > -1) {
+                shuffledWords.splice(index, 1);
+            }
+            displayWords();
+        }
+
+        function checkSentence() {
+            const message = document.getElementById('message');
+            const isCorrect = userSentence.join('') === originalSentence.replace(/\//g, '');
+            
+            if (isCorrect) {
+                
+                document.getElementById('resetButton').style.display = 'none';
+                message.textContent = 'Chúc mừng! Bạn đã sắp xếp đúng.';
+                message.style.color = 'green';
+                correctAnswers++;
+                currentQuestionIndex++;
+            } else {
+                message.textContent = 'Chưa đúng!';
+                message.style.color = 'red';
+            }
+            
+            totalAnswers++;
+            updateStats();
+            updateProgressBar();
+            document.getElementById('nextButton').style.display = 'inline-block';
+            if (correctAnswers === currentLessonSentences.length) {
+                finishLesson();
+               document.getElementById('nextButton').style.display = 'none';
+               document.getElementById('resetButton').style.display = 'none';
+           };
+
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < currentLessonSentences.length) {
+                showNextQuestion();
+                document.getElementById('nextButton').style.display = 'none';
+               document.getElementById('resetButton').style.display = 'inline-block';
+            } else {
+                finishLesson();
+            }
+        }
+
+        function updateStats() {
+            const questionCountElement = document.getElementById('questionCount');
+            const accuracyRateElement = document.getElementById('accuracyRate');
+            
+            questionCountElement.textContent = `${currentQuestionIndex}/${totalQuestions}`;
+            const accuracy = currentQuestionIndex > 0 
+                ? Math.round((correctAnswers / totalAnswers) * 100) 
+                : 0;
+            accuracyRateElement.textContent = `${accuracy}%`;
+        }
+
+        function updateProgressBar() {
+            const progressBar = document.getElementById('progressBar');
+            const progress = (currentQuestionIndex / totalQuestions) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function finishLesson() {
+            const container = document.getElementById('wordContainer');
+            container.innerHTML = `
+                <h2>Bài học hoàn thành!</h2>
+            `;
+            document.getElementById('nextButton').style.display = 'none';
+            document.getElementById('resetButton').style.display = 'none';
+        }
+
+        function resetGame() {
+            /*currentQuestionIndex = 0;
+            correctAnswers = 0;
+            loadLesson();
+            showNextQuestion();
+            document.getElementById('resetButton').style.display = 'none';*/
+            separateAndShuffleWords();
+
+        }
+
+        // Load initial lesson data
+        loadLesson();
+// Thêm đoạn này vào cuối file script để khôi phục theme đã lưu
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme');
+    const themeToggle = document.getElementById('themeToggle');
+    
+    if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        themeToggle.textContent = '☀️';
+    } else {
+        themeToggle.textContent = '🌙';
+    }
+});
+    </script>
+
+
+</body></html>

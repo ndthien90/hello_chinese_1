@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Bài Tập Trắc Nghiệm Pinyin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Mulish', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 10px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .header {
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: clamp(1.8em, 5vw, 2.5em);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: clamp(0.9em, 3vw, 1.1em);
+            margin-bottom: 20px;
+        }
+        
+        .practice-selector {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2196F3;
+        }
+        
+        .practice-selector h3 {
+            margin-top: 0;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: clamp(1em, 4vw, 1.2em);
+        }
+        
+        .student-info {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .student-info label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: clamp(1em, 3vw, 1.1em);
+        }
+        
+        .student-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: clamp(1em, 3vw, 1.1em);
+            font-weight: 500;
+            background: white;
+            transition: all 0.3s ease;
+            font-family: 'Mulish', sans-serif;
+        }
+        
+        .student-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .student-input::placeholder {
+            color: #999;
+            font-weight: normal;
+        }
+        
+        .student-input.error {
+            border-color: #f44336;
+            box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
+        }
+        
+        .dropdown-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .practice-dropdown {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: clamp(0.9em, 3vw, 1.1em);
+            font-weight: 600;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 200px;
+            max-width: 300px;
+        }
+        
+        .practice-dropdown:hover {
+            border-color: #2196F3;
+            box-shadow: 0 2px 10px rgba(33, 150, 243, 0.2);
+        }
+        
+        .practice-dropdown:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+        
+        .load-btn {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: clamp(0.9em, 3vw, 1.1em);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: 'Mulish', sans-serif;
+            min-width: 120px;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: rgba(33, 150, 243, 0.3);
+            user-select: none;
+        }
+        
+        .load-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .load-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading {
+            display: none;
+            margin: 15px 0;
+            padding: 15px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            color: #856404;
+            font-size: clamp(0.9em, 3vw, 1em);
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #f44336;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+            font-size: clamp(0.9em, 3vw, 1em);
+        }
+        
+        .practice-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            color: #1976d2;
+            font-size: clamp(0.9em, 3vw, 1em);
+            display: none;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .action-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: clamp(0.9em, 3vw, 1em);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 150px;
+            max-width: 200px;
+            justify-content: center;
+        }
+        
+        .start-quiz-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .quiz-section {
+            display: none;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: clamp(1.2em, 4vw, 1.5em);
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: clamp(0.8em, 2.5vw, 0.9em);
+            margin-top: 5px;
+        }
+        
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 25px;
+            height: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .question-number {
+            font-size: clamp(1em, 3vw, 1.2em);
+            color: #666;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .question-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: clamp(350px, 60vh, 450px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .question {
+            font-size: clamp(1.1em, 3vw, 1.3em);
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .chinese-container {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chinese-text {
+            font-family: 'KaiTi', '楷体', serif;
+            font-size: clamp(3em, 15vw, 5em);
+            color: #d32f2f;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            line-height: 1;
+        }
+        
+        .chinese-text:hover {
+            transform: scale(1.1);
+            color: #b71c1c;
+        }
+        
+        .meaning {
+            font-size: clamp(1.1em, 4vw, 1.4em);
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 400;
+            font-style: italic;
+        }
+        
+        .audio-btn {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: clamp(45px, 12vw, 60px);
+            height: clamp(45px, 12vw, 60px);
+            font-size: clamp(1.2em, 4vw, 1.5em);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+            margin: 10px auto;
+            touch-action: manipulation;
+        }
+        
+        .audio-btn:hover, .audio-btn:active {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+        
+        .audio-btn.playing {
+            animation: pulse 1s infinite;
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+        
+        .audio-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .audio-btn.error {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        .option {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 12px 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            //font-size: clamp(0.9em, 3vw, 1.2em);
+            font-size: 2em;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            touch-action: manipulation;
+            min-height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            line-height: 1.3;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .option:hover:not(.disabled) {
+            background: #e8f5e8;
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        
+        .option:active:not(.disabled) {
+            transform: translateY(0);
+        }
+        
+        .option.selected {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        .option.selected span:first-child {
+            color: white !important;
+        }
+        
+        .option.correct {
+            background: #4CAF50 !important;
+            color: white !important;
+            border-color: #4CAF50 !important;
+            animation: correctPulse 0.8s ease-in-out;
+        }
+        
+        .option.correct span:first-child {
+            color: white !important;
+        }
+        
+        .option.incorrect {
+            background: #f44336 !important;
+            color: white !important;
+            border-color: #f44336 !important;
+            animation: incorrectShake 0.8s ease-in-out;
+        }
+        
+        .option.incorrect span:first-child {
+            color: white !important;
+        }
+        
+        .option.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+        
+        @keyframes correctPulse {
+            0%, 100% { transform: translateY(-2px) scale(1); }
+            50% { transform: translateY(-2px) scale(1.02); }
+        }
+        
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateY(-2px) translateX(0); }
+            25% { transform: translateY(-2px) translateX(-3px); }
+            75% { transform: translateY(-2px) translateX(3px); }
+        }
+        
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: clamp(1em, 3vw, 1.1em);
+            font-weight: 600;
+            min-height: 20px;
+        }
+        
+        .feedback.correct {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 2px solid #4CAF50;
+        }
+        
+        .feedback.incorrect {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #f44336;
+        }
+        
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .nav-btn {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: clamp(0.8em, 2.5vw, 0.9em);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: 'Mulish', sans-serif;
+            max-width: 120px;
+            touch-action: manipulation;
+            white-space: nowrap;
+        }
+        
+        .nav-btn:hover, .nav-btn:active {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: clamp(1em, 3vw, 1.3em);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            font-family: 'Mulish', sans-serif;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            touch-action: manipulation;
+        }
+        
+        .submit-btn:hover, .submit-btn:active {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .result {
+            background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+            border: 2px solid #4CAF50;
+            border-radius: 20px;
+            padding: 25px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: clamp(1em, 3vw, 1.2em);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
+        }
+        
+        .score {
+            font-size: clamp(2em, 8vw, 3em);
+            font-weight: 700;
+            color: #4CAF50;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .result-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .reset-btn {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 20px;
+            font-size: clamp(0.9em, 3vw, 1.1em);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: 'Mulish', sans-serif;
+            touch-action: manipulation;
+        }
+        
+        .reset-btn:hover, .reset-btn:active {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+        }
+        
+        .back-btn {
+            background: linear-gradient(45deg, #9C27B0, #7B1FA2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 20px;
+            font-size: clamp(0.9em, 3vw, 1.1em);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: 'Mulish', sans-serif;
+            touch-action: manipulation;
+        }
+        
+        .back-btn:hover, .back-btn:active {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3);
+        }
+
+        .audio-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: clamp(0.8em, 2.5vw, 0.9em);
+            display: none;
+        }
+
+        .audio-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .audio-status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .audio-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        /* Mobile specific optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+                align-items: flex-start;
+            }
+            
+            .container {
+                margin: 5px 0;
+                padding: 15px;
+                border-radius: 15px;
+                min-height: calc(100vh - 10px);
+            }
+            
+            .dropdown-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .practice-dropdown {
+                width: 100%;
+                min-width: auto;
+                max-width: none;
+            }
+            
+            .load-btn {
+                width: 100%;
+                min-width: auto;
+            }
+            
+            .options {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            
+            .option {
+                padding: 10px 6px;
+                min-height: 50px;
+                font-size: clamp(1.2em, 2.8vw, 1.8em);
+            }
+            
+            .navigation {
+                justify-content: center;
+                gap: 20px;
+            }
+            
+            .nav-btn {
+                flex: 0 0 auto;
+                min-width: 80px;
+                max-width: 100px;
+                padding: 8px 12px;
+                font-size: 0.8em;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                width: 100%;
+                min-width: auto;
+                max-width: none;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                padding: 10px;
+            }
+            
+            .question-container {
+                padding: 15px;
+                min-height: clamp(300px, 50vh, 400px);
+            }
+            
+            .chinese-container {
+                margin: 15px 0;
+            }
+            
+            .result-buttons {
+                gap: 15px;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            body {
+                padding: 2px;
+            }
+            
+            .container {
+                padding: 10px;
+                margin: 2px 0;
+            }
+            
+            .practice-selector {
+                padding: 10px;
+            }
+            
+            .question-container {
+                padding: 10px;
+                min-height: clamp(250px, 45vh, 350px);
+            }
+            
+            .options {
+                gap: 8px;
+            }
+            
+            .option {
+                padding: 12px 8px;
+                min-height: 50px;
+            }
+        }
+
+        /* Landscape mobile optimization */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .container {
+                min-height: auto;
+            }
+            
+            .question-container {
+                min-height: clamp(200px, 40vh, 300px);
+            }
+            
+            .chinese-text {
+                font-size: clamp(2.5em, 12vw, 4em);
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .option:hover:not(.disabled) {
+                background: #fff;
+                border-color: #ddd;
+                transform: none;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            
+            .audio-btn:hover {
+                transform: none;
+                box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+            }
+            
+            .nav-btn:hover, .action-btn:hover, .reset-btn:hover, .back-btn:hover, .load-btn:hover {
+                transform: none;
+            }
+            
+            /* Better touch targets for mobile */
+            button, .option {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Improve button press feedback on touch devices */
+            button:active, .option:active:not(.disabled) {
+                opacity: 0.8;
+                transform: scale(0.98);
+            }
+            
+            /* Ensure animations work on touch devices */
+            .option.correct {
+                animation: correctPulse 0.8s ease-in-out !important;
+            }
+            
+            .option.incorrect {
+                animation: incorrectShake 0.8s ease-in-out !important;
+            }
+        }
+
+        /* High DPI screens */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .chinese-text {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 Bài Tập Trắc Nghiệm Pinyin</h1>
+            <p class="subtitle">Chọn phát âm Pinyin đúng cho từ tiếng Trung</p>
+        </div>
+        
+        <!-- Practice Selection Section -->
+        <div class="practice-selector" id="practice-selector">
+            <h3>🎯 Thông tin học sinh và Bài luyện tập:</h3>
+            
+            <!-- Student Name Input -->
+            <div class="student-info">
+                <label for="student-name">👨‍🎓 Tên học sinh:</label>
+                <input type="text" id="student-name" class="student-input" placeholder="Nhập tên của bạn..." maxlength="50">
+            </div>
+            
+            <div class="dropdown-container">
+                <select class="practice-dropdown" id="practice-dropdown">
+                    <option value="">Chọn bài luyện tập...</option>
+                </select>
+                <button class="load-btn" id="load-btn">🚀 Tải Bài</button>
+            </div>
+            <div class="loading" id="loading">⏳ Đang tải dữ liệu...</div>
+            <div class="error" id="error"></div>
+            <div class="practice-info" id="practice-info"></div>
+        </div>
+        
+        <!-- Quiz Section -->
+        <div class="quiz-section" id="quiz-section">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="question-number-stat">1</div>
+                    <div class="stat-label">Câu hỏi</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="score-stat">0</div>
+                    <div class="stat-label">Điểm số</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="accuracy-stat">0%</div>
+                    <div class="stat-label">Độ chính xác</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            
+            <div class="question-number" id="question-number">Câu 1 / ?</div>
+            
+            <div class="question-container" id="question-container">
+                <div class="question">Cách đọc pinyin của chữ sau là gì?</div>
+                <div class="chinese-container">
+                    <div class="chinese-text" id="chinese-text" onclick="playAudio()">?</div>
+                    <div class="meaning" id="meaning">?</div>
+                    <button class="audio-btn" id="audio-btn" onclick="playAudio()" title="Phát âm">🔊</button>
+                </div>
+                <div class="options" id="options"></div>
+                <div class="feedback" id="feedback"></div>
+                <div id="audio-status" class="audio-status"></div>
+            </div>
+            
+            <div class="button-container">
+                <button class="submit-btn" id="submit-btn" onclick="submitQuiz()" style="display: none;">Nộp Bài</button>
+                
+                <div class="navigation">
+                    <button class="nav-btn" id="next-btn" onclick="nextQuestion()" disabled>Tiếp →</button>
+                </div>
+            </div>
+            
+            <div id="result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            dataPath: 'data_pinyinPractice/',
+            practices: [
+                { id: 'practice1', name: '📚 Luyện Tập 1' },
+                { id: 'practice2', name: '📚 Luyện Tập 2' },
+                { id: 'practice3', name: '📚 Luyện Tập 3 ' },
+                { id: 'practice4', name: '📚 Luyện Tập 4 ' },
+                { id: 'practice5', name: '📚 Luyện Tập 5 ' },
+                { id: 'practice6', name: '📚 Luyện Tập 6 ' },
+                { id: 'practice7', name: '📚 Luyện Tập 7 ' },
+                { id: 'practice8', name: '📚 Luyện Tập 8 ' },
+                { id: 'practice9', name: '📚 Luyện Tập 9 ' },
+                { id: 'practice10', name: '📚 Luyện Tập 10 ' },
+                { id: 'practice11', name: '📚 Luyện Tập 11 ' },
+                { id: 'practice12', name: '📚 Luyện Tập 12 ' },
+                { id: 'practice13', name: '📚 Luyện Tập 13 ' },
+                { id: 'practice14', name: '📚 Luyện Tập 14 ' },
+                { id: 'practice15', name: '📚 Luyện Tập 15 ' },
+                { id: 'practice16', name: '📚 Luyện Tập 16 ' },
+                { id: 'practice17', name: '📚 Luyện Tập 17 ' },
+                { id: 'practice18', name: '📚 Luyện Tập 18 ' },
+                { id: 'practice19', name: '📚 Luyện Tập 19 ' },
+                { id: 'practice20', name: '📚 Luyện Tập 20 ' }
+            ]
+        };
+
+        // Demo data as fallback
+        const demoData = {
+            practice1: `你|bạn|nī|ní|*nǐ|nì
+我|tôi|wō|wó|*wǒ|wò
+他|anh ấy|tā|tá|*tǎ|tà
+她|cô ấy|tā|tá|*tā|tà
+好|tốt|hāo|háo|*hǎo|hào
+来|đến|lāi|*lái|lǎi|lài
+去|đi|qū|qú|qǔ|*qù
+大|lớn|dā|dá|dǎ|*dà
+小|nhỏ|xiāo|xiáo|*xiǎo|xiào
+人|người|rēn|*rén|rěn|rèn
+家|nhà|*jiā|jiá|jiǎ|jià
+学|học|xuē|xué|*xué|xuè
+吃|ăn|chī|*chī|chǐ|chì
+喝|uống|hē|hé|*hē|hè
+看|xem|kān|kán|*kàn|kàn`,
+            practice2: `八|tám|bā|bá|*bā|bà
+怕|sợ|pā|pá|pǎ|*pà
+马|ngựa|mā|má|*mǎ|mà
+发|phát|*fā|fá|fǎ|fà
+那|đó|nā|ná|nǎ|*nà
+个|cái|gē|gé|gě|*gè
+可|có thể|kē|ké|*kě|kè
+天|trời|*tiān|tián|tiǎn|tiàn
+不|không|bū|bú|bǔ|*bù
+对|đúng|duī|duí|duǐ|*duì
+有|có|yōu|yóu|*yǒu|yòu
+会|biết|huī|huí|*huì|huì
+说|nói|shuō|shuó|*shuō|shuò
+做|làm|zuō|zuó|*zuò|zuò
+想|nghĩ|xiāng|xiáng|*xiǎng|xiàng`,
+            practice3: `门|cửa|mēn|mén|*mén|mèn
+问|hỏi|wēn|wén|wěn|*wèn
+很|rất|hēn|hén|*hěn|hèn
+跟|với|gēn|gén|*gēn|gèn
+什|gì|shén|shé|*shén|shè
+么|gì|me|mé|*me|mè
+时|thời|shí|shí|*shí|shì
+候|lúc|hóu|hóu|*hòu|hòu
+年|năm|nián|nián|*nián|nián
+月|tháng|yuē|yué|*yuè|yuè
+日|ngày|rí|rí|*rì|rì
+今|hôm|jīn|jín|*jīn|jìn
+明|mai|míng|míng|*míng|mìng
+昨|hôm qua|zuó|zuó|*zuó|zuò
+现|hiện tại|xiàn|xiàn|*xiàn|xiàn`
+        };
+
+        let questions = [];
+        let currentQuestion = 0;
+        let userAnswers = {};
+        let questionAnswered = false;
+        let quizCompleted = false;
+        let currentPractice = '';
+        let currentAudio = null;
+        let score = 0;
+        let correctAnswers = 0;
+        let studentName = '';
+        let attemptCount = 0;
+
+        // Initialize the app with mobile debugging
+        function initializeApp() {
+            console.log('🚀 App initializing...');
+            
+            populatePracticeDropdown();
+            setupTouchOptimizations();
+            
+            const loadBtn = document.getElementById('load-btn');
+            if (loadBtn) {
+                loadBtn.onclick = null;
+                
+                loadBtn.onclick = function(e) {
+                    console.log('🖱️ Load button clicked via onclick');
+                    e.preventDefault();
+                    loadPractice();
+                };
+                
+                loadBtn.addEventListener('click', function(e) {
+                    console.log('🖱️ Load button clicked via addEventListener');
+                    e.preventDefault();
+                    loadPractice();
+                });
+                
+                loadBtn.addEventListener('touchend', function(e) {
+                    console.log('👆 Load button touched');
+                    e.preventDefault();
+                    loadPractice();
+                });
+                
+                console.log('✅ Load button events attached');
+            } else {
+                console.error('❌ Load button not found!');
+            }
+            
+            console.log('✅ App initialized for mobile/desktop');
+        }
+
+        // Setup touch optimizations
+        function setupTouchOptimizations() {
+            const addTouchFeedback = (element) => {
+                element.addEventListener('touchstart', function() {
+                    this.style.opacity = '0.8';
+                }, { passive: true });
+                
+                element.addEventListener('touchend', function() {
+                    this.style.opacity = '1';
+                }, { passive: true });
+                
+                element.addEventListener('touchcancel', function() {
+                    this.style.opacity = '1';
+                }, { passive: true });
+            };
+
+            document.querySelectorAll('button, .option').forEach(addTouchFeedback);
+        }
+
+        // Populate practice dropdown
+        function populatePracticeDropdown() {
+            const dropdown = document.getElementById('practice-dropdown');
+            dropdown.innerHTML = '<option value="">Chọn bài luyện tập...</option>';
+            
+            CONFIG.practices.forEach(practice => {
+                const option = document.createElement('option');
+                option.value = practice.id;
+                option.textContent = practice.name;
+                dropdown.appendChild(option);
+            });
+        }
+
+        // Load practice data with student name validation
+        async function loadPractice() {
+            console.log('🔄 loadPractice called');
+            
+            const practiceSelect = document.getElementById('practice-dropdown');
+            const selectedPractice = practiceSelect.value;
+            const studentNameInput = document.getElementById('student-name');
+            const inputStudentName = studentNameInput.value.trim();
+            
+            console.log('🎯 Selected practice:', selectedPractice);
+            console.log('👨‍🎓 Student name:', inputStudentName);
+            
+            // Validate student name
+            if (!inputStudentName) {
+                showError('Vui lòng nhập tên học sinh!');
+                studentNameInput.classList.add('error');
+                studentNameInput.focus();
+                return;
+            }
+            
+            // Validate practice selection
+            if (!selectedPractice) {
+                showError('Vui lòng chọn một bài luyện tập!');
+                studentNameInput.classList.remove('error');
+                return;
+            }
+            
+            studentNameInput.classList.remove('error');
+            studentName = inputStudentName;
+            
+            showLoading(true);
+            hideError();
+            
+            const loadBtn = document.getElementById('load-btn');
+            loadBtn.style.opacity = '0.7';
+            loadBtn.textContent = '⏳ Đang tải...';
+            
+            try {
+                let fileContent;
+                let isUsingDemo = false;
+                
+                try {
+                    const txtPath = `${CONFIG.dataPath}${selectedPractice}/${selectedPractice}.txt`;
+                    console.log(`🔍 Trying to load: ${txtPath}`);
+                    
+                    const response = await fetch(txtPath);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    fileContent = await response.text();
+                    console.log(`✅ Successfully loaded file: ${txtPath}`);
+                    
+                } catch (error) {
+                    console.warn(`❌ Failed to load file: ${error.message}`);
+                    
+                    if (demoData[selectedPractice]) {
+                        fileContent = demoData[selectedPractice];
+                        isUsingDemo = true;
+                        console.log(`📚 Using demo data for ${selectedPractice}`);
+                    } else {
+                        throw new Error(`Không tìm thấy dữ liệu cho ${selectedPractice}`);
+                    }
+                }
+                
+                if (isUsingDemo) {
+                    showError(`⚠️ Đang sử dụng dữ liệu demo. Để dùng file thật, hãy đặt file tại: ${CONFIG.dataPath}${selectedPractice}/${selectedPractice}.txt`);
+                    setTimeout(hideError, 6000);
+                }
+                
+                const lines = fileContent.trim().split('\n');
+                questions = [];
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const parts = line.split('|');
+                    if (parts.length !== 6) {
+                        console.warn(`Dòng ${i + 1} có format không đúng: ${line}`);
+                        continue;
+                    }
+                    
+                    const [chinese, meaning, opt1, opt2, opt3, opt4] = parts;
+                    const options = [opt1, opt2, opt3, opt4];
+                    
+                    let correct = '';
+                    const cleanOptions = options.map(opt => {
+                        if (opt.startsWith('*')) {
+                            correct = opt.substring(1);
+                            return correct;
+                        }
+                        return opt;
+                    });
+                    
+                    if (!correct) {
+                        console.warn(`Không tìm thấy đáp án đúng trong dòng ${i + 1}: ${line}`);
+                        continue;
+                    }
+                    
+                    questions.push({
+                        chinese: chinese,
+                        meaning: meaning,
+                        correct: correct,
+                        options: shuffleArray([...cleanOptions]),
+                        audioFile: `${chinese}.mp3`,
+                        isDemo: isUsingDemo
+                    });
+                }
+                
+                if (questions.length === 0) {
+                    throw new Error('Không tìm thấy câu hỏi hợp lệ trong file!');
+                }
+                
+                currentPractice = selectedPractice;
+                showPracticeInfo(selectedPractice, questions.length);
+                showLoading(false);
+                
+                console.log(`✅ Successfully parsed ${questions.length} questions for ${studentName}`);
+                
+            } catch (error) {
+                console.error('❌ Error in loadPractice:', error);
+                showError(error.message);
+                showLoading(false);
+            } finally {
+                loadBtn.style.opacity = '1';
+                loadBtn.textContent = '🚀 Tải Bài';
+            }
+        }
+
+        // Show practice info with student name
+        function showPracticeInfo(practiceId, questionCount) {
+            const infoDiv = document.getElementById('practice-info');
+            const practiceName = CONFIG.practices.find(p => p.id === practiceId)?.name || practiceId;
+            
+            infoDiv.innerHTML = `
+                <strong>👨‍🎓 Học sinh: ${studentName}</strong><br>
+                <strong>📚 ${practiceName}</strong><br>
+                Số câu hỏi: ${questionCount}<br>
+                <div class="action-buttons">
+                    <button class="action-btn start-quiz-btn" onclick="startQuiz()">
+                        🎯 Bắt đầu Quiz
+                    </button>
+                </div>
+            `;
+            showElement('practice-info');
+        }
+
+        // Start quiz
+        function startQuiz() {
+            if (!questions.length) {
+                showError('Chưa có dữ liệu bài học. Vui lòng chọn bài học trước.');
+                return;
+            }
+
+            currentQuestion = 0;
+            userAnswers = {};
+            questionAnswered = false;
+            quizCompleted = false;
+            score = 0;
+            correctAnswers = 0;
+            attemptCount = 0; // Reset attempt count when starting new quiz
+            
+            shuffleQuestions();
+            initializeQuiz();
+        }
+
+        // Initialize quiz UI
+        function initializeQuiz() {
+            document.getElementById('practice-selector').style.display = 'none';
+            document.getElementById('quiz-section').style.display = 'block';
+            
+            displayQuestion();
+            updateStats();
+        }
+
+        // Shuffle questions
+        function shuffleQuestions() {
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]];
+            }
+        }
+
+        // Shuffle array
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Display current question with A,B,C,D labels
+        function displayQuestion() {
+            if (questions.length === 0) return;
+            
+            const question = questions[currentQuestion];
+            questionAnswered = false;
+            
+            document.getElementById('question-number').textContent = `Câu ${currentQuestion + 1} / ${questions.length}`;
+            document.getElementById('chinese-text').textContent = question.chinese;
+            document.getElementById('meaning').textContent = question.meaning;
+            
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            
+            const optionLabels = ['A', 'B', 'C', 'D'];
+            
+            question.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                
+                const labelSpan = document.createElement('span');
+                labelSpan.style.fontWeight = 'bold';
+                labelSpan.style.color = '#667eea';
+                labelSpan.style.marginRight = '8px';
+                labelSpan.textContent = `${optionLabels[index]}.`;
+                
+                const textSpan = document.createElement('span');
+                textSpan.textContent = option;
+                
+                optionDiv.appendChild(labelSpan);
+                optionDiv.appendChild(textSpan);
+                
+                optionDiv.onclick = () => selectOption(index, option);
+                optionDiv.id = `option-${index}`;
+                optionDiv.dataset.originalOption = option;
+                
+                optionsContainer.appendChild(optionDiv);
+            });
+            
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('feedback').className = 'feedback';
+            
+            const audioBtn = document.getElementById('audio-btn');
+            audioBtn.classList.remove('playing', 'error');
+            audioBtn.disabled = false;
+            
+            updateNavigationButtons();
+            updateProgress();
+            updateStats();
+            hideElement('audio-status');
+        }
+
+        // NEW LOGIC: Select option without retry capability
+        function selectOption(optionIndex, selectedAnswer) {
+            if (quizCompleted || questionAnswered) return;
+            
+            console.log(`🎯 Option selected: ${optionIndex}, answer: ${selectedAnswer}`);
+            
+            const question = questions[currentQuestion];
+            const isCorrect = selectedAnswer === question.correct;
+            
+            // Remove previous selections and effects
+            const allOptions = document.querySelectorAll('.option');
+            allOptions.forEach(option => {
+                option.classList.remove('selected', 'correct', 'incorrect');
+            });
+            
+            // Mark selected option
+            const selectedOption = document.getElementById(`option-${optionIndex}`);
+            if (!selectedOption) {
+                console.error('Selected option not found!');
+                return;
+            }
+            
+            selectedOption.classList.add('selected');
+            
+            if (isCorrect) {
+                // Correct answer
+                selectedOption.classList.add('correct');
+                document.getElementById('feedback').innerHTML = '✅ Chính xác!';
+                document.getElementById('feedback').className = 'feedback correct';
+                
+                userAnswers[currentQuestion] = selectedAnswer;
+                questionAnswered = true;
+                score += 10;
+                correctAnswers++;
+                
+                console.log('✅ Correct answer selected');
+                
+            } else {
+                // Incorrect answer - show correct answer and don't allow retry
+                selectedOption.classList.add('incorrect');
+                
+                // Find and highlight the correct answer
+                allOptions.forEach(option => {
+                    const optionText = option.querySelector('span:last-child').textContent;
+                    if (optionText === question.correct) {
+                        option.classList.add('correct');
+                    }
+                });
+                
+                document.getElementById('feedback').innerHTML = `❌ Sai rồi! Đáp án đúng là: <strong>${question.correct}</strong>`;
+                document.getElementById('feedback').className = 'feedback incorrect';
+                
+                userAnswers[currentQuestion] = selectedAnswer; // Still record the answer for tracking
+                questionAnswered = true;
+                
+                console.log('❌ Incorrect answer selected, showing correct answer');
+            }
+            
+            // Disable all options after any answer (correct or incorrect)
+            allOptions.forEach(option => {
+                option.classList.add('disabled');
+                option.style.pointerEvents = 'none';
+                option.onclick = null;
+            });
+            
+            updateNavigationButtons();
+            updateStats();
+        }
+
+        // Update progress
+        function updateProgress() {
+            const progress = ((currentQuestion) / questions.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+        }
+
+        // Update stats - Modified to calculate accuracy correctly
+        function updateStats() {
+            document.getElementById('question-number-stat').textContent = `${currentQuestion + 1}`;
+            document.getElementById('score-stat').textContent = score;
+            
+            // Calculate accuracy based on answered questions
+            const answeredQuestions = Object.keys(userAnswers).length;
+            const accuracy = answeredQuestions > 0 ? Math.round((correctAnswers / answeredQuestions) * 100) : 0;
+            document.getElementById('accuracy-stat').textContent = `${accuracy}%`;
+        }
+
+        // Update navigation buttons - REMOVED BACKWARD NAVIGATION
+        function updateNavigationButtons() {
+            const nextBtn = document.getElementById('next-btn');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            if (currentQuestion === questions.length - 1) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'block';
+                submitBtn.disabled = Object.keys(userAnswers).length !== questions.length;
+            } else {
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+                nextBtn.disabled = !questionAnswered;
+            }
+        }
+
+        // Navigation functions - REMOVED BACKWARD NAVIGATION
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1 && questionAnswered) {
+                currentQuestion++;
+                displayQuestion();
+            }
+        }
+
+        // Play audio
+        async function playAudio() {
+            if (questions.length === 0) return;
+            
+            const question = questions[currentQuestion];
+            const audioBtn = document.getElementById('audio-btn');
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+
+            try {
+                let audioPath;
+                if (question.isDemo) {
+                    audioPath = `${CONFIG.dataPath}${currentPractice}/mp3/${question.audioFile}`;
+                } else {
+                    audioPath = `${CONFIG.dataPath}${currentPractice}/mp3/${question.audioFile}`;
+                }
+                
+                currentAudio = new Audio(audioPath);
+                
+                currentAudio.onloadstart = function() {
+                    audioBtn.classList.add('playing');
+                    audioBtn.disabled = true;
+                    audioBtn.classList.remove('error');
+                };
+                
+                currentAudio.onended = function() {
+                    audioBtn.classList.remove('playing');
+                    audioBtn.disabled = false;
+                };
+                
+                currentAudio.onerror = function(e) {
+                    console.error('Audio error:', e);
+                    audioBtn.classList.remove('playing');
+                    audioBtn.classList.add('error');
+                    audioBtn.disabled = false;
+                    
+                    playTextToSpeech(question.chinese);
+                    showAudioStatus(`Dùng âm thanh tổng hợp`, 'info');
+                };
+                
+                currentAudio.volume = 1.0;
+                currentAudio.playbackRate = 0.8;
+                
+                await currentAudio.play();
+                
+            } catch (error) {
+                console.error('Error playing audio:', error);
+                audioBtn.classList.remove('playing');
+                audioBtn.classList.add('error');
+                audioBtn.disabled = false;
+                
+                playTextToSpeech(question.chinese);
+                showAudioStatus('Dùng âm thanh tổng hợp', 'info');
+            }
+        }
+
+        // Text to speech fallback
+        function playTextToSpeech(text) {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.7;
+                utterance.pitch = 1;
+                speechSynthesis.speak(utterance);
+            } else {
+                const chineseText = document.getElementById('chinese-text');
+                const originalText = chineseText.textContent;
+                const question = questions[currentQuestion];
+                chineseText.textContent = question.correct;
+                chineseText.style.color = '#2196F3';
+                
+                setTimeout(() => {
+                    chineseText.textContent = originalText;
+                    chineseText.style.color = '#d32f2f';
+                }, 2000);
+            }
+        }
+
+        // Show audio status
+        function showAudioStatus(message, type) {
+            const statusDiv = document.getElementById('audio-status');
+            statusDiv.textContent = message;
+            statusDiv.className = `audio-status ${type}`;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Submit quiz with personalized results
+        function submitQuiz() {
+            if (quizCompleted) return;
+            
+            console.log('📝 Submitting quiz...');
+            
+            quizCompleted = true;
+            attemptCount++; // Increment attempt count
+            
+            document.getElementById('question-container').style.display = 'none';
+            document.querySelector('.navigation').style.display = 'none';
+            document.getElementById('submit-btn').style.display = 'none';
+            document.querySelector('.progress-bar').style.display = 'none';
+            document.getElementById('question-number').style.display = 'none';
+            document.querySelector('.stats').style.display = 'none';
+            
+            // Calculate final score based on correct answers only
+            const finalScore = correctAnswers;
+            const percentage = Math.round((finalScore / questions.length) * 100);
+            let message = '';
+            let personalMessage = '';
+            
+            if (percentage >= 90) {
+                message = '🎉 Xuất sắc! Bạn đã thành thạo pinyin!';
+                personalMessage = `Chúc mừng ${studentName}! Kết quả tuyệt vời!`;
+            } else if (percentage >= 70) {
+                message = '👍 Khá tốt! Hãy tiếp tục luyện tập!';
+                personalMessage = `Tốt lắm ${studentName}! Bạn đang tiến bộ!`;
+            } else if (percentage >= 50) {
+                message = '📚 Cần cải thiện thêm. Hãy học thêm nhé!';
+                personalMessage = `${studentName}, hãy cố gắng thêm nhé!`;
+            } else {
+                message = '💪 Đừng nản lòng! Hãy ôn tập và thử lại!';
+                personalMessage = `${studentName}, đừng nản lòng! Hãy thử lại!`;
+            }
+            
+            // Get practice name
+            const practiceName = CONFIG.practices.find(p => p.id === currentPractice)?.name || currentPractice;
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div style="font-size: clamp(1.5em, 5vw, 2em); color: #667eea; font-weight: bold; margin-bottom: 10px;">
+                    👨‍🎓 ${studentName}
+                </div>
+                <div style="font-size: clamp(1.1em, 3.5vw, 1.3em); color: #666; margin-bottom: 10px;">
+                    ${practiceName}
+                </div>
+                <div style="font-size: clamp(1em, 3vw, 1.2em); color: #888; margin-bottom: 15px;">
+                    🔢 Lần nộp: ${attemptCount}
+                </div>
+                <div class="score">${finalScore}/${questions.length}</div>
+                <div style="font-size: clamp(1.2em, 4vw, 1.5em); margin-bottom: 15px;">Tỷ lệ đúng: ${percentage}%</div>
+                <div style="font-size: clamp(1.1em, 3.5vw, 1.4em); margin-bottom: 10px; color: #4CAF50; font-weight: 600;">
+                    ${personalMessage}
+                </div>
+                <div style="font-size: clamp(1em, 3vw, 1.3em); margin-bottom: 20px;">${message}</div>
+                <div class="result-buttons">
+                    <button class="reset-btn" onclick="resetQuiz()">🔄 Làm lại</button>
+                    <button class="back-btn" onclick="backToSelection()">📚 Chọn bài khác</button>
+                </div>
+            `;
+            
+            resultDiv.style.display = 'block';
+            
+            console.log(`✅ Quiz completed by ${studentName}: ${finalScore}/${questions.length} (${percentage}%) - Attempt: ${attemptCount}`);
+        }
+
+        // Reset quiz with complete state cleanup
+        function resetQuiz() {
+            console.log('🔄 Resetting quiz...');
+            
+            currentQuestion = 0;
+            userAnswers = {};
+            questionAnswered = false;
+            quizCompleted = false;
+            score = 0;
+            correctAnswers = 0;
+            // Note: attemptCount is NOT reset here so it keeps counting across retries
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+            
+            document.getElementById('question-container').style.display = 'block';
+            document.querySelector('.navigation').style.display = 'flex';
+            document.querySelector('.progress-bar').style.display = 'block';
+            document.getElementById('question-number').style.display = 'block';
+            document.querySelector('.stats').style.display = 'grid';
+            document.getElementById('result').style.display = 'none';
+            
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'block';
+            document.getElementById('next-btn').disabled = true;
+            
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('feedback').className = 'feedback';
+            
+            document.getElementById('progress-fill').style.width = '0%';
+            
+            shuffleQuestions();
+            displayQuestion();
+            updateStats();
+            
+            console.log('✅ Quiz reset complete');
+        }
+
+        // Back to selection with complete reset including student name
+        function backToSelection() {
+            console.log('🔄 Returning to lesson selection...');
+            
+            currentQuestion = 0;
+            userAnswers = {};
+            questionAnswered = false;
+            quizCompleted = false;
+            questions = [];
+            score = 0;
+            correctAnswers = 0;
+            attemptCount = 0; // Reset attempt count when going back to selection
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+            
+            document.getElementById('question-container').style.display = 'block';
+            document.querySelector('.navigation').style.display = 'flex';
+            document.querySelector('.progress-bar').style.display = 'block';
+            document.getElementById('question-number').style.display = 'block';
+            document.querySelector('.stats').style.display = 'grid';
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('result').style.display = 'none';
+            
+            document.getElementById('submit-btn').style.display = 'inline-block';
+            document.getElementById('next-btn').style.display = 'block';
+            document.getElementById('next-btn').disabled = true;
+            document.getElementById('submit-btn').disabled = true;
+            
+            document.getElementById('options').innerHTML = '';
+            
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('feedback').className = 'feedback';
+            
+            document.getElementById('progress-fill').style.width = '0%';
+            
+            document.getElementById('question-number-stat').textContent = '1';
+            document.getElementById('score-stat').textContent = '0';
+            document.getElementById('accuracy-stat').textContent = '0%';
+            
+            document.getElementById('question-number').textContent = 'Câu 1 / ?';
+            document.getElementById('chinese-text').textContent = '?';
+            document.getElementById('meaning').textContent = '?';
+            
+            document.getElementById('practice-selector').style.display = 'block';
+            document.getElementById('quiz-section').style.display = 'none';
+            
+            document.getElementById('practice-dropdown').value = '';
+            hideError();
+            hideElement('practice-info');
+            
+            document.getElementById('student-name').classList.remove('error');
+            
+            console.log('✅ Reset complete, showing lesson selection with student name preserved');
+        }
+
+        // Utility functions
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('load-btn').disabled = show;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function showElement(id) {
+            document.getElementById(id).style.display = 'block';
+        }
+
+        function hideElement(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        // Cleanup when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+        });
+
+        // Handle orientation change
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+            }, 100);
+        });
+    </script>
+</body>
+</html>
