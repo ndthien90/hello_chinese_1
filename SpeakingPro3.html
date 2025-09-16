@@ -1,0 +1,732 @@
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinese Speaking Practice - Enhanced</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #f5f5f5;
+            padding: 0.5rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #333;
+            font-size: 1.8rem;
+        }
+
+        .lesson-select {
+            margin-bottom: 1.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            background: white;
+        }
+
+        .practice-container {
+            margin-bottom: 0.5rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .target-sentence {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .pinyin {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }        
+        .meaning {
+            font-size: 1rem;
+            color: black;
+            text-align: center;
+        }
+
+
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .audio-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 1rem;
+            margin: 20px;
+            flex-wrap: nowrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            flex: 0 1 auto;
+            min-width: 100px;
+            max-width: 150px;
+            transition: all 0.3s ease;
+        }
+
+        .record {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .record.recording {
+            background: #f44336;
+            animation: pulse 1.5s infinite;
+        }
+
+        .next {
+            background: #2196F3;
+            color: white;
+        }
+
+        .play-sample {
+            background: #9c27b0;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .timer {
+            font-size: 1.2rem;
+            text-align: center;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .progress-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress {
+            height: 100%;
+            background: #4CAF50;
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: right;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .result-container {
+            margin-top: 1.5rem;
+        }
+
+        .your-speech {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+            padding: 0rem;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-height: 60px;
+        }
+
+        /* Thêm các style mới cho việc so sánh */
+        .comparison-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 0rem;
+        }
+
+        .original-text, .spoken-text {
+            font-size: 1.4rem;
+            padding: 1rem;
+            background: #fff;
+            //border: 1px solid #ddd;
+            border-radius: 5px;
+            min-height: 60px;
+        }
+
+        .text-label {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .correct {
+            color: #2e7d32;
+        }
+
+        .incorrect {
+            color: #c62828;
+            background-color: #ffebee;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        /* Thêm animation cho các ký tự sai */
+        @keyframes highlight {
+            0% { background-color: #ffebee; }
+            50% { background-color: #ffcdd2; }
+            100% { background-color: #ffebee; }
+        }
+
+        .incorrect {
+            animation: highlight 2s infinite;
+        }
+
+        .stats-container {
+            display:none;
+            //display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2196F3;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .feedback {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .feedback.good {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .feedback.average {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .feedback.poor {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .btn-container {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            button {
+                width: 100%;
+                max-width: none;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Luyện Nói Tiếng Trung</h1>
+        
+        <select class="lesson-select" id="lessonSelect">
+            <option value="">Chọn bài học</option>
+            <option value="1">Bài 1: 老师您好 Em chào thầy ạ</option>
+        </select>
+
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+            <div class="progress-text" id="progress-text">0/0 câu</div>
+        </div>
+
+        <div class="practice-container">
+            <div class="target-sentence" id="target-chinese"></div>
+            <div class="pinyin" id="target-pinyin"></div>
+            <div class="meaning" id="target-meaning"></div>
+        </div>
+
+        <div class="audio-controls">
+            <button class="play-sample" id="playPronunciation">
+                <span>Nghe mẫu</span>
+            </button>
+        </div>
+
+        <div class="timer" id="timer"></div>
+
+        <div class="result-container">
+            <h3>Câu của bạn:</h3>
+            <div class="your-speech" id="speech-result"></div>
+            <div class="feedback" id="feedback"></div>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-value" id="accuracy">0%</div>
+                <div class="stat-label">Độ chính xác</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="completed">0</div>
+                <div class="stat-label">Câu đã hoàn thành</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="streak">0</div>
+                <div class="stat-label">Chuỗi đúng</div>
+            </div>
+        </div>
+
+        <div class="btn-container">
+            <button class="record" id="recordButton">
+                <span>Bắt đầu nói</span>
+            </button>
+            <button class="next" id="nextButton">Tiếp theo</button>
+        </div>
+    </div>
+
+    <script>
+        // Expanded lesson data
+        const lessonData = {
+1: [
+    { chinese: "你好", pinyin: "Nǐ hǎo", meaning: "Xin chào" },
+    { chinese: "再见", pinyin: "Zàijiàn", meaning: "Tạm biệt" },
+    { chinese: "老师，您好！", pinyin: "Lǎoshī, nín hǎo!", meaning: "Chào thầy/cô!" },
+    { chinese: "你好吗？", pinyin: "Nǐ hǎo ma?", meaning: "Bạn có khỏe không?" },
+    { chinese: "我很好。", pinyin: "Wǒ hěn hǎo.", meaning: "Tôi rất khỏe." },
+    { chinese: "你是老师吗？", pinyin: "Nǐ shì lǎoshī ma?", meaning: "Bạn là giáo viên phải không?" },
+    { chinese: "我不是老师。", pinyin: "Wǒ búshì lǎoshī.", meaning: "Tôi không phải là giáo viên." },
+    { chinese: "我是学生。", pinyin: "Wǒ shì xuéshēng.", meaning: "Tôi là học sinh." },
+    { chinese: "这是本子吗？", pinyin: "Zhè shì běnzi ma?", meaning: "Đây là vở phải không?" },
+    { chinese: "不是，这是书。", pinyin: "Búshì, zhè shì shū.", meaning: "Không, đây là sách." },
+    { chinese: "那是陈楠吗？", pinyin: "Nà shì Chén Nán ma?", meaning: "Kia là Trần Nam phải không?" },
+    { chinese: "不是，那是国安。", pinyin: "Búshì, nà shì Guó'ān.", meaning: "Không, kia là Quốc An." }
+],
+        };
+// Constants
+const MAX_SPEECH_TIME = 15000; // 15 seconds
+
+class ChineseSpeakingApp {
+    constructor() {
+        this.initializeProperties();
+        this.initializeElements();
+        this.setupSpeechRecognition();
+        this.attachEventListeners();
+        this.loadInitialState();
+    }
+
+    initializeProperties() {
+        this.sentences = [];
+        this.currentSentenceIndex = 0;
+        this.recording = false;
+        this.speechTimeout = null;
+        this.timerInterval = null;
+        this.lastRecognizedText = '';
+        this.streakCount = 0;
+        this.totalAccuracy = 0;
+        this.completedCount = 0;
+    }
+
+    initializeElements() {
+        // Get all DOM elements
+        this.elements = {
+            recordBtn: document.getElementById("recordButton"),
+            nextBtn: document.getElementById("nextButton"),
+            playPronunciationBtn: document.getElementById("playPronunciation"),
+            targetChinese: document.getElementById("target-chinese"),
+            targetPinyin: document.getElementById("target-pinyin"),
+            targetMeaning: document.getElementById("target-meaning"),
+            speechResult: document.getElementById("speech-result"),
+            progressBar: document.getElementById("progress"),
+            progressText: document.getElementById("progress-text"),
+            timer: document.getElementById("timer"),
+            lessonSelect: document.getElementById("lessonSelect"),
+            accuracyDisplay: document.getElementById("accuracy"),
+            completedDisplay: document.getElementById("completed"),
+            streakDisplay: document.getElementById("streak"),
+            feedback: document.getElementById("feedback")
+        };
+    }
+
+    setupSpeechRecognition() {
+        if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+            alert('Trình duyệt của bạn không hỗ trợ nhận dạng giọng nói.');
+            return;
+        }
+
+        this.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        this.recognition.lang = 'zh-CN';
+        this.recognition.interimResults = true;
+        this.recognition.continuous = false;
+
+        this.recognition.onresult = (event) => this.handleSpeechResult(event);
+        this.recognition.onend = () => this.handleSpeechEnd();
+        this.recognition.onerror = (event) => this.handleSpeechError(event);
+    }
+
+    attachEventListeners() {
+        this.elements.recordBtn.addEventListener('click', () => this.toggleRecording());
+        this.elements.nextBtn.addEventListener('click', () => this.nextSentence());
+        this.elements.lessonSelect.addEventListener('change', (e) => this.handleLessonChange(e));
+        this.elements.playPronunciationBtn.addEventListener('click', () => this.playPronunciation());
+    }
+
+    loadInitialState() {
+        this.loadSentence();
+    }
+
+    // Timer Management
+    startTimer() {
+        this.clearTimer();
+        
+        let timeLeft = MAX_SPEECH_TIME / 1000;
+        this.elements.timer.textContent = `${timeLeft}s`;
+
+        this.timerInterval = setInterval(() => {
+            timeLeft--;
+            this.elements.timer.textContent = `${timeLeft}s`;
+            
+            if (timeLeft <= 0) {
+                this.stopRecording();
+            }
+        }, 1000);
+    }
+
+    clearTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+        this.elements.timer.textContent = '';
+    }
+
+    // Recording Management
+    startRecording() {
+        if (this.sentences.length === 0) {
+            alert("Vui lòng chọn bài học trước khi bắt đầu.");
+            return;
+        }
+
+        this.recording = true;
+        this.elements.recordBtn.classList.add("recording");
+        this.elements.recordBtn.querySelector("span").textContent = "Đang nghe...";
+        
+        this.recognition.start();
+        this.startTimer();
+
+        this.speechTimeout = setTimeout(() => {
+            this.stopRecording();
+        }, MAX_SPEECH_TIME);
+    }
+
+    stopRecording() {
+        this.recording = false;
+        this.elements.recordBtn.classList.remove("recording");
+        this.elements.recordBtn.querySelector("span").textContent = "Bắt đầu nói";
+        
+        this.recognition.stop();
+        
+        if (this.speechTimeout) {
+            clearTimeout(this.speechTimeout);
+            this.speechTimeout = null;
+        }
+        
+        this.clearTimer();
+    }
+
+    toggleRecording() {
+        if (!this.recording) {
+            this.startRecording();
+        } else {
+            this.stopRecording();
+        }
+    }
+
+    // Speech Recognition Handlers
+    handleSpeechResult(event) {
+        const transcript = Array.from(event.results)
+            .map(result => result[0].transcript)
+            .join('');
+
+        this.lastRecognizedText = transcript;
+        const comparison = this.compareTexts(
+            this.sentences[this.currentSentenceIndex].chinese, 
+            transcript
+        );
+        
+        this.elements.speechResult.innerHTML = comparison.result;
+        this.updateFeedback(comparison.score);
+        this.updateStats(comparison.score);
+    }
+
+    handleSpeechEnd() {
+        if (this.recording) {
+            this.stopRecording();
+        }
+    }
+
+    handleSpeechError(event) {
+        console.error('Speech recognition error:', event.error);
+        this.stopRecording();
+        alert('Có lỗi xảy ra với nhận dạng giọng nói. Vui lòng thử lại.');
+    }
+
+    // Audio Playback
+    playPronunciation() {
+        if (this.sentences.length > 0) {
+            const lessonNumber = this.elements.lessonSelect.value;
+            const audioPath = `data_speaking/Bài ${lessonNumber}/${this.currentSentenceIndex + 1}.mp3`;
+            
+            const audio = new Audio(audioPath);
+            audio.play().catch(error => {
+                console.error('Error playing audio:', error);
+                alert('Không thể phát âm thanh. Vui lòng kiểm tra lại file âm thanh.');
+            });
+        }
+    }
+
+    // Lesson Management
+    handleLessonChange(e) {
+        if (e.target.value) {
+            this.loadLessonData(parseInt(e.target.value));
+        } else {
+            this.sentences = [];
+            this.loadSentence();
+        }
+    }
+
+    loadLessonData(lessonNumber) {
+        try {
+            this.sentences = lessonData[lessonNumber] || [];
+            if (this.sentences.length === 0) {
+                throw new Error('Không tìm thấy dữ liệu bài học');
+            }
+            this.currentSentenceIndex = 0;
+            this.updateProgress();
+            this.loadSentence();
+        } catch (error) {
+            console.error('Error loading lesson data:', error);
+            alert('Không thể tải dữ liệu bài học. Vui lòng thử lại sau.');
+        }
+    }
+
+    // Navigation
+    nextSentence() {
+        if (this.currentSentenceIndex < this.sentences.length - 1) {
+            this.currentSentenceIndex++;
+            this.loadSentence();
+        } else {
+            alert('Chúc mừng! Bạn đã hoàn thành bài học.');
+            this.currentSentenceIndex = 0;
+            this.loadSentence();
+        }
+    }
+
+    // UI Updates
+    loadSentence() {
+        if (this.recording) {
+            this.stopRecording();
+        }
+        
+        this.elements.speechResult.innerHTML = "";
+        this.elements.feedback.className = 'feedback';
+        this.elements.feedback.textContent = '';
+        this.lastRecognizedText = '';
+        
+        this.updateProgress();
+        
+        if (this.sentences.length > 0) {
+            const sentence = this.sentences[this.currentSentenceIndex];
+            this.elements.targetChinese.textContent = sentence.chinese;
+            this.elements.targetPinyin.textContent = sentence.pinyin;
+            this.elements.targetMeaning.textContent = sentence.meaning;
+        } else {
+            this.elements.targetChinese.textContent = "Vui lòng chọn bài học";
+            this.elements.targetPinyin.textContent = "";
+            this.elements.targetMeaning.textContent = "";
+        }
+    }
+
+    updateProgress() {
+        if (this.sentences.length > 0) {
+            const progress = ((this.currentSentenceIndex + 1) / this.sentences.length) * 100;
+            this.elements.progressBar.style.width = `${progress}%`;
+            this.elements.progressText.textContent = 
+                `${this.currentSentenceIndex + 1}/${this.sentences.length} câu`;
+        } else {
+            this.elements.progressBar.style.width = '0%';
+            this.elements.progressText.textContent = '0/0 câu';
+        }
+    }
+
+    updateStats(accuracy) {
+        this.totalAccuracy = (this.totalAccuracy * this.completedCount + accuracy) / 
+                            (this.completedCount + 1);
+        this.completedCount++;
+        
+        if (accuracy >= 80) this.streakCount++;
+        else this.streakCount = 0;
+
+        this.elements.accuracyDisplay.textContent = `${Math.round(this.totalAccuracy)}%`;
+        this.elements.completedDisplay.textContent = this.completedCount;
+        this.elements.streakDisplay.textContent = this.streakCount;
+    }
+
+    updateFeedback(score) {
+        const feedback = this.elements.feedback;
+        if (score >= 80) {
+            feedback.className = 'feedback good';
+            feedback.textContent = 'Tuyệt vời! Phát âm rất tốt!';
+        } else if (score >= 60) {
+            feedback.className = 'feedback average';
+            feedback.textContent = 'Khá tốt! Cố gắng thêm nhé!';
+        } else {
+            feedback.className = 'feedback poor';
+            feedback.textContent = 'Cần cải thiện thêm. Hãy thử lại!';
+        }
+    }
+
+    // Text Comparison
+compareTexts(original, spoken) {
+    // Hàm để tách chuỗi thành mảng các ký tự, giữ lại dấu câu cho hiển thị
+    const separateTextAndPunctuation = (text) => {
+        const chars = [];
+        const punctuations = new Map(); // Lưu vị trí của dấu câu
+        
+        Array.from(text).forEach((char, index) => {
+            if (/[。，！？：!?,.:]/.test(char)) {
+                punctuations.set(chars.length - 1, char);
+            } else {
+                chars.push(char);
+            }
+        });
+        
+        return { chars, punctuations };
+    };
+
+    // Xử lý câu gốc và câu nói
+    const { chars: originalChars, punctuations: originalPunct } = separateTextAndPunctuation(original);
+    const { chars: spokenChars } = separateTextAndPunctuation(spoken);
+
+    let resultHtml = '';
+    let correctCount = 0;
+    
+    resultHtml += '<div class="spoken-text">';
+    
+    const maxLength = Math.max(originalChars.length, spokenChars.length);
+    let currentSpokenIndex = 0;
+
+    for (let i = 0; i < maxLength; i++) {
+        // Xử lý ký tự hiện tại
+        if (currentSpokenIndex < spokenChars.length) {
+            const spokenChar = spokenChars[currentSpokenIndex].toLowerCase();
+            const originalChar = i < originalChars.length ? originalChars[i].toLowerCase() : '';
+
+            if (originalChar === spokenChar) {
+                resultHtml += `<span class="correct">${spokenChars[currentSpokenIndex]}</span>`;
+                correctCount++;
+                
+                // Thêm dấu câu nếu có ở vị trí này trong câu gốc
+                if (originalPunct.has(i)) {
+                    resultHtml += `<span class="correct">${originalPunct.get(i)}</span>`;
+                }
+            } else {
+                resultHtml += `<span class="incorrect">${spokenChars[currentSpokenIndex]}</span>`;
+            }
+            currentSpokenIndex++;
+        } else if (i < originalChars.length) {
+            // Hiển thị dấu gạch dưới cho các ký tự còn thiếu
+            resultHtml += '<span class="incorrect">_</span>';
+        }
+    }
+
+    resultHtml += '</div>';
+
+    // Tính điểm dựa trên số ký tự đúng (không tính dấu câu)
+    const score = Math.round((correctCount / originalChars.length) * 100);
+    return { result: resultHtml, score };
+}
+}
+
+// Initialize the app
+document.addEventListener('DOMContentLoaded', () => {
+    window.chineseSpeakingApp = new ChineseSpeakingApp();
+});
+    </script>
+
+
+</body></html>

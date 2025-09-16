@@ -1,0 +1,48 @@
+你好
+Nǐ hǎo
+Xin chào
+/#
+再见
+Zàijiàn
+Tạm biệt
+/#
+老师，您好！
+Lǎoshī, nín hǎo!
+Chào thầy/cô!
+/#
+你好吗？
+Nǐ hǎo ma?
+Bạn có khỏe không?
+/#
+我很好。
+Wǒ hěn hǎo.
+Tôi rất khỏe.
+/#
+你是老师吗？
+Nǐ shì lǎoshī ma?
+Bạn là giáo viên phải không?
+/#
+我不是老师。
+Wǒ búshì lǎoshī.
+Tôi không phải là giáo viên.
+/#
+我是学生。
+Wǒ shì xuéshēng.
+Tôi là học sinh.
+/#
+这是本子吗？
+Zhè shì běnzi ma?
+Đây là vở phải không?
+/#
+不是，这是书。
+Búshì, zhè shì shū.
+Không, đây là sách.
+/#
+那是陈楠吗？
+Nà shì Chén Nán ma?
+Kia là Trần Nam phải không?
+/#
+不是，那是国安。
+Búshì, nà shì Guó'ān.
+Không, kia là Quốc An.
+/#
