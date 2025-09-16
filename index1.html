@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中文学习 - Vui học tiếng Trung</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            max-width: 420px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .app-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+            font-weight: 300;
+        }
+
+        .features-grid {
+            padding: 30px 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            border: 2px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--card-color-start), var(--card-color-end));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            border-color: var(--card-color-start);
+        }
+
+        .feature-card:hover::before {
+            opacity: 0.1;
+        }
+
+        .feature-card:hover .card-text {
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .card-text {
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            line-height: 1.2;
+        }
+
+        /* Color themes for each card */
+        .feature-card:nth-child(1) { --card-color-start: #ff6b6b; --card-color-end: #ff8e8e; }
+        .feature-card:nth-child(2) { --card-color-start: #4ecdc4; --card-color-end: #44a08d; }
+        .feature-card:nth-child(3) { --card-color-start: #45b7d1; --card-color-end: #96c93d; }
+        .feature-card:nth-child(4) { --card-color-start: #f093fb; --card-color-end: #f5576c; }
+        .feature-card:nth-child(5) { --card-color-start: #4facfe; --card-color-end: #00f2fe; }
+        .feature-card:nth-child(6) { --card-color-start: #43e97b; --card-color-end: #38f9d7; }
+        .feature-card:nth-child(7) { --card-color-start: #fa709a; --card-color-end: #fee140; }
+        .feature-card:nth-child(8) { --card-color-start: #a8edea; --card-color-end: #fed6e3; }
+        .feature-card:nth-child(9) { --card-color-start: #ff9a9e; --card-color-end: #fecfef; }
+
+        /* Full width card for HSK */
+        .feature-card.hsk-card {
+            grid-column: 1 / -1;
+            aspect-ratio: 2.5;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+        }
+
+        .feature-card.hsk-card::before {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2));
+        }
+
+        .feature-card.hsk-card .card-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .feature-card.hsk-card .card-icon {
+            font-size: 40px;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            margin: 20px;
+            margin-top: 0;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .progress-track {
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            border-radius: 10px;
+            width: 65%;
+            animation: progressAnimation 2s ease-out;
+        }
+
+        @keyframes progressAnimation {
+            from { width: 0%; }
+            to { width: 65%; }
+        }
+
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .app-container {
+                margin: 10px;
+                max-width: none;
+            }
+            
+            .features-grid {
+                gap: 12px;
+                padding: 20px 15px;
+            }
+            
+            .card-text {
+                font-size: 13px;
+            }
+            
+            .card-icon {
+                font-size: 28px;
+            }
+        }
+
+        /* Add subtle animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feature-card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .feature-card:nth-child(1) { animation-delay: 0.1s; }
+        .feature-card:nth-child(2) { animation-delay: 0.2s; }
+        .feature-card:nth-child(3) { animation-delay: 0.3s; }
+        .feature-card:nth-child(4) { animation-delay: 0.4s; }
+        .feature-card:nth-child(5) { animation-delay: 0.5s; }
+        .feature-card:nth-child(6) { animation-delay: 0.6s; }
+        .feature-card:nth-child(7) { animation-delay: 0.7s; }
+        .feature-card:nth-child(8) { animation-delay: 0.8s; }
+        .feature-card:nth-child(9) { animation-delay: 0.9s; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1 class="app-title">中文学习</h1>
+            <p class="app-subtitle">Vui học tiếng Trung cùng AI</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-text">Tiến độ học tập hôm nay</div>
+            <div class="progress-track">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="features-grid">
+            <a href="phatam.html" class="feature-card">
+                <div class="card-icon">🗣️</div>
+                <div class="card-text">Phát âm</div>
+            </a>
+
+            <a href="pinyin_practice.html" class="feature-card">
+                <div class="card-icon">📝</div>
+                <div class="card-text">Luyện Pinyin</div>
+            </a>
+
+            <a href="study.html" class="feature-card">
+                <div class="card-icon">📚</div>
+                <div class="card-text">Bài học</div>
+            </a>
+
+            <a href="FlashCard_new.html" class="feature-card">
+                <div class="card-icon">🎴</div>
+                <div class="card-text">Từ vựng</div>
+            </a>
+
+            <a href="voca_MatchingGame.html" class="feature-card">
+                <div class="card-icon">🧩</div>
+                <div class="card-text">Ghép từ</div>
+            </a>
+
+            <a href="voca_FillBlankGame.html" class="feature-card">
+                <div class="card-icon">✏️</div>
+                <div class="card-text">Điền từ</div>
+            </a>
+
+            <a href="wordGame.html" class="feature-card">
+                <div class="card-icon">🔤</div>
+                <div class="card-text">Xếp từ</div>
+            </a>
+
+            <a href="SpeakingPro3.html" class="feature-card">
+                <div class="card-icon">🎤</div>
+                <div class="card-text">Luyện nói</div>
+            </a>
+
+            <a href="voca_hsk.html" class="feature-card hsk-card">
+                <div class="card-icon">🏆</div>
+                <div class="card-text">Luyện thi HSK</div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
