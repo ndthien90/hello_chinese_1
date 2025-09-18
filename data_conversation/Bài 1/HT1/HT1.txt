@@ -1,0 +1,5 @@
+nǐ hǎo, nǐ shì lǎoshī ma?|你好，你是老师吗？|Xin chào, bạn là giáo viên phải không?
+bù shì, wǒ shì xuéshēng.|不是，我是学生。|Không, tôi là học sinh.
+nà shì lǎoshī ma?|那是老师吗？|Đó có phải là giáo viên không?
+shì, nà shì lǎoshī.|是，那是老师。|Đúng, đó là giáo viên.
+xièxie!|谢谢！|Cảm ơn!
