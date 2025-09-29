@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ứng dụng Lựa chọn Số Ngẫu Nhiên (1-99)</title>
+    
+    <!-- Google Fonts for Mulish -->
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Cấu hình Tailwind CSS để sử dụng Dark Mode -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Bật chế độ tối bằng cách thêm class 'dark' vào body
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#2563EB',
+                        'dark-bg': '#1f2937',
+                        'dark-card': '#374151',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Thiết lập font chữ Mulish cho toàn bộ ứng dụng */
+        body {
+            font-family: 'Mulish', sans-serif;
+            background-color: #f1f5f9;
+            transition: background-color 0.3s;
+        }
+
+        /* Áp dụng font 楷体 (Kaiti) cho Hán tự */
+        #target-chinese-char {
+            /* Sử dụng 楷体 (Kaiti) và các font chữ thư pháp khác làm dự phòng */
+            font-family: 楷体, 'KaiTi', 'SimSun', serif; 
+        }
+        
+        /* Global Dark Mode Styles */
+        .dark body {
+            background-color: var(--dark-bg);
+        }
+        .dark .main-container {
+            background-color: var(--dark-card);
+        }
+        .dark h1 {
+            color: #93c5fd; /* blue-300 */
+        }
+        .dark p.text-gray-600 {
+            color: #d1d5db; /* gray-300 */
+        }
+
+        /* Định nghĩa kiểu dáng cho hình tròn chứa số */
+        .number-circle {
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Chuyển động mượt mà */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            user-select: none;
+            /* Đảm bảo hình tròn không bị biến dạng khi animation */
+            will-change: transform, background-color, border-color; 
+        }
+
+        .number-circle:hover:not(.correct-flash):not(.incorrect-flash):not(.hidden-circle) {
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -4px rgba(37, 99, 235, 0.2);
+        }
+        
+        /* Keyframe cho hiệu ứng nháy XANH (Đúng) */
+        @keyframes flash-correct {
+            0%, 100% { background-color: #10b981; border-color: #047857; transform: scale(1.1); }
+            50% { background-color: #34d399; border-color: #059669; }
+        }
+        /* Keyframe cho hiệu ứng nháy ĐỎ (Sai) */
+        @keyframes flash-incorrect {
+            0%, 100% { background-color: #ef4444; border-color: #b91c1c; transform: scale(1.1); }
+            50% { background-color: #f87171; border-color: #dc2626; }
+        }
+
+        .number-circle.correct-flash {
+            animation: flash-correct 0.4s 3; /* Nháy 3 lần */
+            pointer-events: none; /* Không cho click khi đang flash */
+        }
+        .number-circle.incorrect-flash {
+            animation: flash-incorrect 0.4s 3; /* Nháy 3 lần */
+            pointer-events: none;
+        }
+
+        /* Hiệu ứng mờ dần cho các số bị loại bỏ */
+        .number-circle.hidden-circle {
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+        }
+
+        /* Bổ sung CSS cho pháo giấy */
+        #game-over-modal {
+            /* Đảm bảo modal là vùng chứa cho canvas */
+            position: fixed; 
+            overflow: hidden;
+        }
+
+        #fireworks-canvas {
+            z-index: 5; /* Nằm sau nội dung modal (z-10) */
+        }
+    </style>
+</head>
+<body class="p-0 sm:p-8 min-h-screen flex flex-col items-center">
+
+    <!-- Container chính - Loại bỏ bo góc và chiếm toàn bộ chiều rộng trên mobile -->
+    <div class="main-container max-w-full sm:max-w-4xl w-full bg-white dark:bg-dark-card p-4 sm:p-10 rounded-none sm:rounded-xl shadow-2xl transition-colors">
+        
+        <!-- Nút chuyển đổi giao diện Sáng/Tối -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-blue-700 dark:text-blue-300">
+                🚀 Trò Chơi Tìm Số
+            </h1>
+            <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 transition-colors shadow-md hover:shadow-lg">
+                <!-- Icon Mặt Trời (Sáng) -->
+                <svg id="sun-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <!-- Icon Mặt Trăng (Tối) -->
+                <svg id="moon-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </div>
+        
+        <!-- Ô chọn số vòng chơi -->
+        <div class="mb-4 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4">
+            <label for="round-selector" class="text-gray-700 dark:text-gray-300 font-semibold">Chọn tổng số vòng chơi:</label>
+            <select id="round-selector" class="p-2 rounded-lg border-2 border-primary-blue bg-white dark:bg-gray-700 dark:text-white font-bold transition-colors shadow-sm focus:ring-2 focus:ring-primary-blue">
+                <option value="5">5 Vòng</option>
+                <option value="10">10 Vòng</option>
+                <option value="15">15 Vòng</option>
+                <option value="20">20 Vòng</option>
+            </select>
+        </div>
+
+        <!-- Khu vực hiển thị Vòng, THỜI GIAN và Điểm số -->
+        <div class="flex justify-between items-center text-xl font-bold mb-6 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 shadow-inner">
+            <span id="round-display" class="text-gray-700 dark:text-gray-300 text-base sm:text-xl">Vòng: 0/5</span>
+            <span id="timer-display" class="text-2xl sm:text-3xl tracking-wider text-red-600 dark:text-red-400 font-extrabold">00:25s</span> 
+            <span id="score-display" class="text-green-600 dark:text-green-400 text-base sm:text-xl">Đúng: 0</span>
+        </div>
+
+        <!-- Khu vực hiển thị SỐ MỤC TIÊU (CHỈ TIẾNG TRUNG) -->
+        <div class="text-center mb-8 p-4 rounded-xl bg-blue-500 dark:bg-blue-700 shadow-xl">
+            <p class="text-white text-lg font-semibold mb-2">Số bạn cần chọn là (Hán tự):</p>
+            <!-- Hán tự dùng font 楷体 -->
+            <div id="target-chinese-display" class="mt-2 text-white text-2xl font-medium">
+                <p id="target-chinese-char" class="text-yellow-200 font-extrabold text-5xl sm:text-6xl tracking-wider">??</p>
+                <p id="target-chinese-pinyin" class="text-yellow-100 italic text-base sm:text-xl mt-1"></p>
+                <!-- Nút Nghe lại -->
+                <button id="speak-button" class="mt-2 px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-full disabled:opacity-50" disabled>
+                    <svg class="w-4 h-4 inline-block align-text-bottom" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-4l-4 4v-4H9a1 1 0 01-1-1v-5a1 1 0 011-1h2l3-3 3 3h2zM7 7H5a1 1 0 00-1 1v2a1 1 0 001 1h2v-4z" clip-rule="evenodd"></path></svg>
+                    Nghe lại
+                </button>
+            </div>
+        </div>
+
+        <!-- Khu vực hiển thị thông báo kết quả -->
+        <div id="feedback-message" class="mb-8 p-4 text-center rounded-lg font-semibold text-xl border-l-4 hidden">
+            <!-- Nội dung phản hồi sẽ được điền bằng JS -->
+        </div>
+        
+        <!-- Khu vực hiển thị số đã chọn/chờ chọn -->
+        <div class="mb-8 p-4 text-center rounded-lg bg-yellow-50 dark:bg-yellow-900/50 border-l-4 border-yellow-500 dark:border-yellow-400 text-yellow-800 dark:text-yellow-200 font-semibold text-base sm:text-xl">
+            Hãy chọn số: <span id="selected-number" class="text-blue-600 dark:text-blue-300 font-bold">Chưa có</span>
+        </div>
+
+        <!-- Khu vực chứa 10 hình tròn số (Responsive Layout: 4 cột trên mobile, 5 cột trên tablet+) -->
+        <div id="numbers-container" class="w-full mx-auto border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 grid grid-cols-4 md:grid-cols-5 gap-3 sm:gap-4 justify-items-center items-center relative" style="min-height: 250px;">
+            <p id="start-prompt" class="absolute inset-0 flex items-center justify-center text-lg sm:text-xl text-gray-500 dark:text-gray-400 col-span-5">
+                Nhấn "Bắt đầu Trò chơi" để chơi 5 vòng!
+            </p>
+            <!-- Các hình tròn số sẽ được tạo bằng JavaScript tại đây -->
+        </div>
+
+        <!-- Nút tạo lại số và Nút Trợ giúp (Responsive stacking) -->
+        <div class="flex flex-col sm:flex-row justify-center mt-10 space-y-4 sm:space-y-0 sm:space-x-4">
+            <button id="help-button" class="px-6 py-3 bg-red-500 text-white font-bold rounded-lg shadow-lg hover:bg-red-600 transition-all active:scale-95 text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                💡 Trợ giúp 50/50
+            </button>
+            <button id="generate-button" class="px-6 py-3 bg-primary-blue text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 text-lg">
+                ▶️ Bắt đầu Trò chơi
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL HIỂN THỊ KẾT QUẢ CUỐI CÙNG -->
+    <div id="game-over-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center p-4 z-50">
+        <!-- Canvas cho hiệu ứng pháo giấy -->
+        <canvas id="fireworks-canvas" class="absolute inset-0 w-full h-full"></canvas>
+
+        <div class="bg-white dark:bg-gray-700 p-8 rounded-xl shadow-2xl max-w-sm w-full text-center transform transition-all scale-100 relative z-10">
+            <h2 id="modal-title" class="text-4xl font-extrabold text-green-600 dark:text-green-400 mb-4">🎉 Hoàn Thành!</h2>
+            <p class="text-lg text-gray-700 dark:text-gray-200 mb-6">Bạn đã hoàn thành <span id="modal-total-rounds">5</span> vòng chơi.</p>
+            <p class="text-2xl font-semibold text-gray-800 dark:text-white mb-8">Kết quả cuối cùng: <span id="final-score" class="text-blue-600 dark:text-blue-400 font-extrabold">0/5</span></p>
+            <button id="restart-button-modal" class="px-6 py-3 bg-primary-blue text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 text-lg">
+                Chơi lại
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Các biến toàn cục
+        const numbersContainer = document.getElementById('numbers-container');
+        const selectedNumberDisplay = document.getElementById('selected-number');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const generateButton = document.getElementById('generate-button');
+        const helpButton = document.getElementById('help-button');
+        const themeToggle = document.getElementById('theme-toggle');
+        const targetChineseCharDisplay = document.getElementById('target-chinese-char');
+        const targetChinesePinyinDisplay = document.getElementById('target-chinese-pinyin');
+        const startPrompt = document.getElementById('start-prompt');
+        const speakButton = document.getElementById('speak-button');
+        const roundSelector = document.getElementById('round-selector');
+        const modalTotalRoundsDisplay = document.getElementById('modal-total-rounds');
+        
+        // --- Speech API Variables ---
+        const synth = window.speechSynthesis;
+        let chineseVoice = null;
+        
+        // --- Game State Variables ---
+        let totalRounds = 5;
+        let currentRound = 0;
+        let correctGuesses = 0;
+        let isGameActive = false;
+        let isHelpUsed = false;
+        const usedTargetNumbers = new Set();
+        
+        // --- UI Elements for Game State ---
+        const roundDisplay = document.getElementById('round-display');
+        const scoreDisplay = document.getElementById('score-display');
+        // NEW: Timer display element
+        const timerDisplay = document.getElementById('timer-display'); 
+        const gameOverModal = document.getElementById('game-over-modal');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const restartButtonModal = document.getElementById('restart-button-modal');
+
+        const count = 10;
+        const min = 1;
+        const max = 99;
+        let targetNumber = null;
+        let currentSelected = null;
+        let isDarkMode = false;
+        
+        // NEW: Timer Variables
+        const TIME_PER_ROUND = 8; // 8 giây cho mỗi vòng
+        let remainingTime = 0;
+        let timerInterval = null;
+        
+        
+        // Dữ liệu chuyển đổi số sang Tiếng Trung và Pinyin (1-99)
+        const unitPinyin = ['', 'yī', 'èr', 'sān', 'sì', 'wǔ', 'liù', 'qī', 'bā', 'jiǔ'];
+        const unitChar = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+        const tenChar = '十';
+        const tenPinyin = 'shí';
+
+        // --- CONFETTI (PHÁO GIẤY) VARIABLES ---
+        const confettiCanvas = document.getElementById('fireworks-canvas'); 
+        const ctx = confettiCanvas.getContext('2d');
+        let particles = [];
+        let animationFrameId = null; 
+        
+        // CÁC BIẾN KIỂM SOÁT SỐ LẦN BẮN PHÁO GIẤY
+        let confettiBurstCount = 0;
+        const maxConfettiBursts = 6; 
+        
+        // Bảng màu rực rỡ cho pháo giấy
+        const CONFETTI_COLORS = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#ffeb3b', '#ffc107', '#ff9800'];
+
+        // Lớp hạt giấy (Confetti Particle)
+        class ConfettiParticle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.width = Math.random() * 8 + 6; 
+                this.height = Math.random() * 4 + 3;
+                
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 15, 
+                    y: (Math.random() * -15) - 5 
+                };
+                this.gravity = 0.5; 
+                this.alpha = 1;
+                this.rotation = Math.random() * 360; 
+                this.rotationSpeed = Math.random() * 0.1 + 0.05; 
+                this.spin = Math.random() < 0.5 ? 1 : -1; 
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation * Math.PI / 180);
+                ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+                
+                ctx.restore();
+            }
+
+            update() {
+                this.velocity.y += this.gravity;
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                
+                this.velocity.x *= 0.98;
+
+                this.rotation += this.rotationSpeed * this.spin * 10;
+                
+                if (this.y > confettiCanvas.height * 1.5) {
+                    this.alpha = 0; 
+                } else if (this.y > confettiCanvas.height * 0.8) {
+                    this.alpha -= 0.008;
+                }
+                
+                this.draw();
+            }
+        }
+
+        // Tạo vụ nổ giấy
+        function createConfettiBurst(x, y, count = 100) {
+            for (let i = 0; i < count; i++) {
+                const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+                particles.push(new ConfettiParticle(x, y, color));
+            }
+        }
+
+        // Vòng lặp animation pháo giấy
+        function animateConfetti() {
+            animationFrameId = requestAnimationFrame(animateConfetti);
+            
+            ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+            particles.forEach((particle, index) => {
+                if (particle.alpha <= 0) {
+                    particles.splice(index, 1);
+                } else {
+                    particle.update();
+                }
+            });
+
+            // CHỈ tạo burst nếu chưa đạt đến giới hạn maxConfettiBursts
+            if (confettiBurstCount < maxConfettiBursts && Math.random() < 0.1) { 
+                const x = Math.random() * confettiCanvas.width;
+                const y = confettiCanvas.height * 0.1; 
+                createConfettiBurst(x, y, 70); // Bắn 70 hạt/lần
+                confettiBurstCount++; // Tăng bộ đếm
+            }
+            
+            // KIỂM TRA ĐỂ DỪNG ANIMATION:
+            if (confettiBurstCount >= maxConfettiBursts && particles.length === 0) {
+                 stopConfetti();
+                 return;
+            }
+
+            if (particles.length > 500) {
+                particles = particles.slice(particles.length - 500);
+            }
+        }
+
+        // Bắt đầu hiệu ứng pháo giấy
+        function startConfetti() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+            
+            if (!animationFrameId) {
+                particles = []; 
+                confettiBurstCount = 0; 
+                animateConfetti();
+            }
+        }
+
+        // Dừng hiệu ứng pháo giấy
+        function stopConfetti() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                particles = [];
+            }
+        }
+        window.addEventListener('resize', () => {
+            if (animationFrameId) {
+                confettiCanvas.width = window.innerWidth;
+                confettiCanvas.height = window.innerHeight;
+            }
+        });
+        // --- END CONFETTI VARIABLES ---
+        
+        /**
+         * Dừng đồng hồ đếm ngược.
+         */
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                // Đảm bảo không còn hiệu ứng nhấp nháy khi dừng
+                timerDisplay.classList.remove('animate-pulse', 'text-red-500'); 
+            }
+        }
+
+        /**
+         * Cập nhật hiển thị đồng hồ.
+         */
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}s`;
+            timerDisplay.textContent = `${timeString}`;
+            
+            // Highlight timer color for urgency
+            if (remainingTime <= 10 && remainingTime > 0) {
+                 timerDisplay.classList.add('animate-pulse', 'text-red-500');
+            } else {
+                 timerDisplay.classList.remove('animate-pulse', 'text-red-500');
+            }
+        }
+        
+        /**
+         * Bắt đầu đồng hồ đếm ngược.
+         */
+        function startTimer() {
+            stopTimer(); // Đảm bảo dừng timer cũ
+            
+            // Tính tổng thời gian: Vòng chơi * 8 giây
+            remainingTime = totalRounds * TIME_PER_ROUND;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                remainingTime--;
+                updateTimerDisplay();
+
+                if (remainingTime <= 0) {
+                    stopTimer();
+                    isGameActive = false;
+                    // Gọi showGameOver với thông báo Hết giờ
+                    showGameOver('Hết giờ!');
+                }
+            }, 1000);
+        }
+
+        /**
+         * Hàm tải giọng đọc tiếng Trung (Mandarin Chinese).
+         */
+        function loadChineseVoice() {
+            if (chineseVoice) return; 
+
+            const voices = synth.getVoices();
+            chineseVoice = voices.find(voice => voice.lang === 'zh-CN' || voice.name.includes('Chinese') || voice.name.includes('Mandarin'));
+
+            if (!chineseVoice) {
+                console.warn("Không tìm thấy giọng đọc tiếng Trung (zh-CN). Sẽ sử dụng giọng mặc định.");
+            }
+            speakButton.disabled = true; 
+        }
+
+        /**
+         * Hàm đọc to văn bản Hán tự.
+         */
+        function speakChineseText(text) {
+            if (!synth) {
+                console.error("Trình duyệt không hỗ trợ Web Speech API.");
+                return;
+            }
+
+            synth.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN'; 
+            utterance.voice = chineseVoice || synth.getVoices().find(v => v.lang.startsWith('zh')) || null; 
+            utterance.rate = 0.8; 
+            
+            utterance.onend = () => {
+                speakButton.disabled = false;
+            };
+
+            synth.speak(utterance);
+        }
+
+        /**
+         * Hàm chuyển đổi số (1-99) sang Hán tự và Pinyin.
+         */
+        function numberToChinese(num) {
+            if (num < 1 || num > 99) return { char: 'Không rõ', pinyin: 'Bù míng' };
+
+            const tens = Math.floor(num / 10);
+            const ones = num % 10;
+            
+            let char = '';
+            let pinyin = '';
+
+            if (num < 10) { 
+                char = unitChar[num];
+                pinyin = unitPinyin[num];
+            } else if (num === 10) { 
+                 char = tenChar;
+                 pinyin = tenPinyin;
+            } else if (num < 20) { 
+                char = tenChar + unitChar[ones];
+                pinyin = tenPinyin + ' ' + unitPinyin[ones];
+            } else { 
+                char = unitChar[tens] + tenChar;
+                pinyin = unitPinyin[tens] + ' ' + tenPinyin;
+
+                if (ones > 0) {
+                    char += unitChar[ones];
+                    pinyin += ' ' + unitPinyin[ones];
+                }
+            }
+            
+            return { char: char.trim(), pinyin: pinyin.trim() };
+        }
+
+
+        /**
+         * Hàm tạo ngẫu nhiên một mảng các số duy nhất.
+         */
+        function generateRandomNumbers(count, min, max) {
+            const numbers = new Set();
+            while (numbers.size < count) {
+                const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+                numbers.add(randomNumber);
+            }
+            return Array.from(numbers);
+        }
+
+        /**
+         * Hàm quản lý chế độ Sáng/Tối.
+         */
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark', isDarkMode);
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+
+            document.getElementById('sun-icon').classList.toggle('hidden', isDarkMode);
+            document.getElementById('moon-icon').classList.toggle('hidden', !isDarkMode);
+        }
+
+        /**
+         * Xử lý sự kiện khi học sinh click vào một số.
+         */
+        function handleNumberClick(event) {
+            const circle = event.currentTarget;
+            const number = parseInt(circle.getAttribute('data-number'), 10);
+            
+            if (circle.classList.contains('correct-flash') || circle.classList.contains('incorrect-flash') || circle.classList.contains('hidden-circle') || !isGameActive) {
+                return;
+            }
+
+            if (currentSelected && currentSelected !== circle) {
+                // Đảm bảo loại bỏ các class "selected" và flash trước khi thêm lại
+                currentSelected.classList.remove('selected', 'bg-red-500', 'text-white', 'correct-flash', 'incorrect-flash', 'bg-green-500');
+                currentSelected.classList.add('bg-blue-500', 'dark:bg-blue-600');
+                currentSelected.style.border = 'none';
+            }
+            
+            currentSelected = circle;
+            selectedNumberDisplay.textContent = number;
+            feedbackMessage.classList.add('hidden'); 
+
+            if (number === targetNumber) {
+                synth.cancel();
+
+                circle.classList.remove('bg-blue-500', 'dark:bg-blue-600');
+                circle.classList.add('selected', 'bg-green-500', 'text-white', 'correct-flash');
+
+                correctGuesses++;
+                scoreDisplay.textContent = `Đúng: ${correctGuesses}`;
+
+                isGameActive = false;
+
+                setTimeout(() => {
+                    circle.classList.remove('correct-flash');
+                    circle.classList.add('bg-green-500'); 
+                    circle.style.border = '4px solid #047857'; 
+
+                    numbersContainer.querySelectorAll('.number-circle').forEach(c => c.removeEventListener('click', handleNumberClick));
+                    helpButton.disabled = true; 
+
+                    startNextRound();
+                }, 1300); 
+
+            } else {
+                circle.classList.remove('bg-blue-500', 'dark:bg-blue-600');
+                circle.classList.add('selected', 'bg-red-500', 'text-white', 'incorrect-flash');
+                
+                setTimeout(() => {
+                    circle.classList.remove('selected', 'bg-red-500', 'text-white', 'incorrect-flash');
+                    circle.classList.add('bg-blue-500', 'dark:bg-blue-600');
+                    currentSelected = null; 
+                    selectedNumberDisplay.textContent = 'Chưa có';
+                }, 1300); 
+            }
+        }
+
+        /**
+         * Hàm xử lý trợ giúp 50/50.
+         */
+        function handleFiftyFiftyHelp() {
+            if (isHelpUsed || targetNumber === null || !isGameActive) {
+                return;
+            }
+
+            const incorrectCircles = Array.from(numbersContainer.querySelectorAll('.number-circle'))
+                .filter(circle => 
+                    parseInt(circle.getAttribute('data-number'), 10) !== targetNumber &&
+                    !circle.classList.contains('hidden-circle')
+                );
+
+            const numbersToRemoveCount = Math.floor(incorrectCircles.length / 2);
+            
+            if (numbersToRemoveCount < 1) {
+                feedbackMessage.textContent = `Không có đủ đáp án sai để loại bỏ. Hãy thử lại!`;
+                feedbackMessage.className = 'mb-8 p-4 text-center rounded-lg bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 font-semibold text-xl';
+                feedbackMessage.classList.remove('hidden');
+                helpButton.disabled = true;
+                isHelpUsed = true;
+                return;
+            }
+
+            const circlesToKeep = [...incorrectCircles];
+            const circlesToRemove = [];
+
+            while (circlesToRemove.length < numbersToRemoveCount && circlesToKeep.length > 0) {
+                const randomIndex = Math.floor(Math.random() * circlesToKeep.length);
+                circlesToRemove.push(circlesToKeep.splice(randomIndex, 1)[0]);
+            }
+            
+            circlesToRemove.forEach(circle => {
+                circle.classList.add('hidden-circle');
+                circle.removeEventListener('click', handleNumberClick); 
+            });
+
+            isHelpUsed = true;
+            helpButton.disabled = true;
+            helpButton.textContent = 'Đã dùng (50/50)';
+            
+            feedbackMessage.classList.add('hidden');
+        }
+
+        /**
+         * Hàm hiển thị Modal chúc mừng và kết thúc trò chơi.
+         */
+        function showGameOver(message = 'Hoàn Thành!') {
+            // DỪNG ĐỒNG HỒ DÙ THẮNG HAY THUA/HẾT GIỜ
+            stopTimer(); 
+
+            isGameActive = false;
+            generateButton.textContent = '▶️ Chơi lại'; 
+            helpButton.disabled = true;
+            speakButton.disabled = true;
+            synth.cancel(); 
+
+            finalScoreDisplay.textContent = `${correctGuesses}/${totalRounds}`;
+            modalTotalRoundsDisplay.textContent = totalRounds; 
+
+            // Cập nhật tiêu đề Modal và pháo giấy
+            const modalTitle = document.getElementById('modal-title');
+            if (message === 'Hết giờ!') {
+                modalTitle.textContent = '⏱️ Hết Giờ!';
+                modalTitle.classList.remove('text-green-600', 'dark:text-green-400');
+                modalTitle.classList.add('text-red-600', 'dark:text-red-400');
+                // Dừng pháo giấy nếu hết giờ
+                stopConfetti(); 
+            } else {
+                 modalTitle.textContent = '🎉 Hoàn Thành!';
+                 modalTitle.classList.remove('text-red-600', 'dark:text-red-400');
+                 modalTitle.classList.add('text-green-600', 'dark:text-green-400');
+                 // Bắn pháo giấy nếu hoàn thành
+                 startConfetti();
+            }
+            
+            gameOverModal.classList.remove('hidden');
+            gameOverModal.classList.add('flex');
+        }
+
+        /**
+         * Hàm bắt đầu vòng chơi mới (hoặc kiểm tra kết thúc game).
+         */
+        function startNextRound() {
+            // KIỂM TRA ĐỂ KẾT THÚC GAME
+            if (currentRound >= totalRounds) {
+                // Nếu hoàn thành đủ vòng, gọi showGameOver với thông báo mặc định
+                showGameOver(); 
+                return;
+            }
+            
+            synth.cancel();
+            
+            currentRound++;
+            isGameActive = true;
+            isHelpUsed = false; 
+            helpButton.disabled = false;
+            speakButton.disabled = false;
+            helpButton.textContent = '💡 Trợ giúp 50/50';
+
+            roundDisplay.textContent = `Vòng: ${currentRound}/${totalRounds}`;
+            generateButton.textContent = '✨ Bỏ qua/Tạo lại Số Mới'; 
+            startPrompt.classList.add('hidden'); 
+            
+            numbersContainer.innerHTML = '';
+            currentSelected = null;
+            selectedNumberDisplay.textContent = 'Chưa có';
+            feedbackMessage.classList.add('hidden');
+
+            let randomNumbers = generateRandomNumbers(count, min, max);
+
+            let newTargetNumber = null;
+
+            const availableGlobalNumbers = [];
+            for (let i = min; i <= max; i++) {
+                if (!usedTargetNumbers.has(i)) {
+                    availableGlobalNumbers.push(i);
+                }
+            }
+
+            if (availableGlobalNumbers.length === 0) {
+                console.error("Đã sử dụng hết tất cả các số có thể có (1-99). Game sẽ kết thúc.");
+                showGameOver();
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * availableGlobalNumbers.length);
+            newTargetNumber = availableGlobalNumbers[randomIndex];
+
+            if (!randomNumbers.includes(newTargetNumber)) {
+                const replaceIndex = Math.floor(Math.random() * randomNumbers.length);
+                randomNumbers[replaceIndex] = newTargetNumber;
+                
+                randomNumbers = randomNumbers.sort(() => Math.random() - 0.5);
+            }
+            
+            targetNumber = newTargetNumber;
+            usedTargetNumbers.add(targetNumber); 
+
+            const chineseTarget = numberToChinese(targetNumber);
+
+            targetChineseCharDisplay.textContent = `${chineseTarget.char}`;
+            targetChinesePinyinDisplay.textContent = `(${chineseTarget.pinyin})`;
+
+            speakChineseText(chineseTarget.char);
+
+
+            randomNumbers.forEach(number => {
+                const circle = document.createElement('div');
+                // Sử dụng Tailwind: w-16 h-16 (64px) trên mobile, w-20 h-20 (80px) trên sm+
+                // Text: text-xl (20px) trên mobile, text-2xl (24px) trên sm+
+                circle.className = 'number-circle flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-blue-500 dark:bg-blue-600 text-white text-xl sm:text-2xl font-bold cursor-pointer';
+                circle.setAttribute('data-number', number);
+                circle.textContent = number;
+                circle.addEventListener('click', handleNumberClick);
+
+                numbersContainer.appendChild(circle);
+            });
+            
+            console.log(`[DEBUG] Vòng ${currentRound}/${totalRounds}. Mục Tiêu: ${targetNumber} (${chineseTarget.char}). Đã dùng ${usedTargetNumbers.size} số.`); 
+        }
+
+        /**
+         * Bắt đầu một game mới (reset tất cả).
+         */
+        function restartGame() {
+            stopConfetti();
+            stopTimer(); // Đảm bảo timer cũ đã dừng
+
+            totalRounds = parseInt(roundSelector.value, 10);
+
+            if (totalRounds > max - min + 1) {
+                console.error(`Lỗi: Không thể chọn ${totalRounds} vòng chơi vì chỉ có ${max - min + 1} số từ 1 đến 99.`);
+                roundSelector.value = 5; 
+                totalRounds = 5;
+                
+                remainingTime = totalRounds * TIME_PER_ROUND;
+                updateTimerDisplay(); // Cập nhật thời gian ban đầu
+                
+                roundDisplay.textContent = `Vòng: 0/${totalRounds}`;
+                startPrompt.textContent = `Nhấn "Bắt đầu Trò chơi" để chơi ${totalRounds} vòng!`;
+            }
+
+            gameOverModal.classList.add('hidden');
+            gameOverModal.classList.remove('flex');
+            
+            currentRound = 0;
+            correctGuesses = 0;
+            usedTargetNumbers.clear(); 
+            isGameActive = true;
+            
+            // BẮT ĐẦU ĐỒNG HỒ ĐẾM NGƯỢC
+            startTimer(); 
+            
+            startNextRound();
+        }
+
+        /**
+         * Thiết lập trạng thái ban đầu khi tải trang.
+         */
+        function initializeGameOnLoad() {
+            if (synth.onvoiceschanged !== undefined) {
+                synth.onvoiceschanged = loadChineseVoice;
+            }
+            loadChineseVoice(); 
+
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                isDarkMode = true;
+                document.body.classList.add('dark');
+                document.getElementById('moon-icon').classList.remove('hidden');
+                document.getElementById('sun-icon').classList.add('hidden');
+            }
+            
+            totalRounds = parseInt(roundSelector.value, 10); 
+
+            // Tính toán và hiển thị thời gian ban đầu
+            remainingTime = totalRounds * TIME_PER_ROUND;
+            updateTimerDisplay(); 
+
+            currentRound = 0;
+            correctGuesses = 0;
+            isGameActive = false;
+            isHelpUsed = false;
+            stopConfetti(); 
+            stopTimer(); // Đảm bảo không có timer chạy
+
+            roundDisplay.textContent = `Vòng: 0/${totalRounds}`; 
+            scoreDisplay.textContent = `Đúng: 0`;
+            generateButton.textContent = '▶️ Bắt đầu Trò chơi';
+            helpButton.disabled = true;
+            speakButton.disabled = true;
+            gameOverModal.classList.add('hidden');
+            numbersContainer.innerHTML = '';
+            startPrompt.classList.remove('hidden');
+            startPrompt.textContent = `Nhấn "Bắt đầu Trò chơi" để chơi ${totalRounds} vòng!`; 
+            targetChineseCharDisplay.textContent = '??'; 
+            targetChinesePinyinDisplay.textContent = ''; 
+            selectedNumberDisplay.textContent = 'Chưa có';
+            feedbackMessage.classList.add('hidden');
+
+            // Gán sự kiện cho các nút
+            generateButton.addEventListener('click', restartGame);
+            themeToggle.addEventListener('click', toggleTheme);
+            helpButton.addEventListener('click', handleFiftyFiftyHelp);
+            restartButtonModal.addEventListener('click', restartGame);
+            speakButton.addEventListener('click', () => {
+                const text = targetChineseCharDisplay.textContent;
+                if (text && text !== '??') {
+                    speakChineseText(text);
+                }
+            });
+
+            // Cập nhật hiển thị Vòng và prompt bắt đầu ngay khi người dùng thay đổi số vòng
+            roundSelector.addEventListener('change', (e) => {
+                const newTotalRounds = parseInt(e.target.value, 10);
+                
+                totalRounds = newTotalRounds; 
+                
+                // Cập nhật thời gian hiển thị chờ (trạng thái 0/X)
+                remainingTime = totalRounds * TIME_PER_ROUND;
+                updateTimerDisplay();
+                
+                const currentRoundToDisplay = isGameActive ? currentRound : 0;
+                roundDisplay.textContent = `Vòng: ${currentRoundToDisplay}/${totalRounds}`;
+                
+                if (!isGameActive) {
+                    startPrompt.textContent = `Nhấn "Bắt đầu Trò chơi" để chơi ${totalRounds} vòng!`;
+                }
+            });
+        }
+
+        // Khởi tạo lần đầu
+        window.onload = initializeGameOnLoad;
+    </script>
+</body>
+</html>
