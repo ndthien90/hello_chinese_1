@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trò Chơi Tìm Hán Tự</title>
+    
+    <!-- Google Fonts for Mulish -->
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Cấu hình Tailwind CSS để sử dụng Dark Mode -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Bật chế độ tối bằng cách thêm class 'dark' vào body
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#2563EB',
+                        'dark-bg': '#1f2937',
+                        'dark-card': '#374151',
+                        'theme-green': '#10b981',
+                        'theme-red': '#ef4444',
+                        'light-text': '#f9fafb', // gray-50
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Thiết lập font chữ Mulish cho toàn bộ ứng dụng */
+        body {
+            font-family: 'Mulish', sans-serif;
+            background-color: #f1f5f9;
+            transition: background-color 0.3s;
+        }
+
+        /* Áp dụng font 楷体 (Kaiti) hoặc các font thư pháp khác cho Hán tự */
+        .chinese-font {
+            /* Đảm bảo Hán tự hiển thị rõ ràng và đẹp mắt */
+            font-family: 楷体, 'KaiTi', 'SimSun', serif; 
+        }
+        
+        /* Global Dark Mode Styles */
+        .dark body {
+            background-color: var(--dark-bg);
+        }
+        .dark .main-container {
+            background-color: var(--dark-card);
+        }
+        .dark h1 {
+            color: #93c5fd; /* blue-300 */
+        }
+        .dark p.text-gray-600 {
+            color: #d1d5db; /* gray-300 */
+        }
+
+        /* Định nghĩa kiểu dáng cho các ô từ vựng */
+        .char-circle {
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Chuyển động mượt mà */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            user-select: none;
+            will-change: transform, background-color, border-color; 
+            width: 70px; /* w-24 */
+            height: 55px; /* h-16 */
+            font-size: 1.25rem; /* text-xl */
+            
+            /* CHẾ ĐỘ SÁNG MẶC ĐỊNH */
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            border: 4px solid #3b82f6; /* Viền cùng màu nền */
+        }
+        
+        /* ĐỊNH NGHĨA RIÊNG CHO CHẾ ĐỘ TỐI (THEO YÊU CẦU) */
+        .dark .char-circle {
+            background-color: var(--dark-bg); /* Nền chữ Hán giống nền body */
+            color: white;
+            border: 2px solid white; /* Viền màu trắng */
+        }
+        
+        @media (min-width: 640px) { /* sm breakpoint */
+            .char-circle {
+                width: 112px; /* sm:w-28 */
+                height: 80px; /* sm:h-20 */
+                font-size: 2.5rem; /* sm:text-2xl */
+            }
+        }
+
+        /* Hover effect */
+        .char-circle:hover:not(.correct-flash):not(.incorrect-flash):not(.hidden-circle) {
+            transform: scale(1.05);
+            /* Bóng đổ cho chế độ sáng */
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -4px rgba(37, 99, 235, 0.2);
+        }
+        .dark .char-circle:hover:not(.correct-flash):not(.incorrect-flash):not(.hidden-circle) {
+            /* Bóng đổ cho chế độ tối (sử dụng màu sáng hơn) */
+            box-shadow: 0 10px 15px -3px rgba(255, 255, 255, 0.1), 0 4px 6px -4px rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Keyframe cho hiệu ứng nháy XANH (Đúng) */
+        @keyframes flash-correct {
+            0%, 100% { background-color: #10b981; border-color: #047857; transform: scale(1.1); }
+            50% { background-color: #34d399; border-color: #059669; }
+        }
+        /* Keyframe cho hiệu ứng nháy ĐỎ (Sai) */
+        @keyframes flash-incorrect {
+            0%, 100% { background-color: #ef4444; border-color: #b91c1c; transform: scale(1.1); }
+            50% { background-color: #f87171; border-color: #dc2626; }
+        }
+
+        .char-circle.correct-flash {
+            animation: flash-correct 0.4s 3; /* Nháy 3 lần */
+            pointer-events: none; /* Không cho click khi đang flash */
+        }
+        .char-circle.incorrect-flash {
+            animation: flash-incorrect 0.4s 3; /* Nháy 3 lần */
+            pointer-events: none;
+        }
+
+        /* Hiệu ứng mờ dần cho các chữ Hán bị loại bỏ */
+        .char-circle.hidden-circle {
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+        }
+        
+        /* Đảm bảo canvas pháo giấy nằm sau modal content */
+        #game-over-modal {
+            position: fixed; 
+            overflow: hidden;
+        }
+        #fireworks-canvas {
+            z-index: 5; 
+        }
+    </style>
+</head>
+<body class="p-0 sm:p-8 min-h-screen flex flex-col items-center">
+
+    <!-- Container chính -->
+    <div class="main-container max-w-full sm:max-w-4xl w-full bg-white dark:bg-dark-card p-4 sm:p-10 rounded-none sm:rounded-xl shadow-2xl transition-colors">
+        
+        <!-- Header và Nút chuyển đổi giao diện Sáng/Tối -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-blue-700 dark:text-blue-300">
+                📚 Tìm Hán Tự
+            </h1>
+            <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 transition-colors shadow-md hover:shadow-lg">
+                <!-- Icon Mặt Trời (Sáng) -->
+                <svg id="sun-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <!-- Icon Mặt Trăng (Tối) -->
+                <svg id="moon-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </div>
+        
+        <!-- Ô chọn BÀI HỌC (Phần chọn vòng chơi đã được loại bỏ) -->
+        <div class="mb-4 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4">
+            <!-- Dropdown chọn Bài học -->
+            <label for="lesson-selector" class="text-gray-700 dark:text-gray-300 font-semibold">Chọn Bài học:</label>
+            <select id="lesson-selector" class="p-2 rounded-lg border-2 border-primary-blue bg-white dark:bg-gray-700 dark:text-white font-bold transition-colors shadow-sm focus:ring-2 focus:ring-primary-blue mr-4">
+                <!-- Các option này sẽ được tự động cập nhật trong thực tế -->
+                <option value="bai1">Bài 1 老师您好</option>
+            </select>
+            
+            <!-- Hidden Round Selector (Giữ lại để logic JS không bị lỗi, nhưng bị ẩn) -->
+            <select id="round-selector" class="hidden">
+                <option value="10">10 Vòng (Mặc định)</option>
+            </select>
+        </div>
+
+        <!-- Khu vực hiển thị Vòng, THỜI GIAN và Điểm số -->
+        <div class="flex justify-between items-center text-xl font-bold mb-6 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 shadow-inner">
+            <span id="round-display" class="text-gray-700 dark:text-gray-300 text-base sm:text-xl">Vòng: 0/10</span>
+            <span id="timer-display" class="text-2xl sm:text-3xl tracking-wider text-theme-red dark:text-red-400 font-extrabold">01:20s</span> 
+            <span id="score-display" class="text-theme-green dark:text-green-400 text-base sm:text-xl">Đúng: 0</span>
+        </div>
+
+        <!-- Khu vực hiển thị MỤC TIÊU (Ý NGHĨA và PINYIN) -->
+        <div class="text-center mb-8 p-4 rounded-xl bg-blue-500 dark:bg-blue-700 shadow-xl">
+            <!-- Dòng "Từ vựng bạn cần tìm có nghĩa là:" đã được loại bỏ -->
+            <div id="target-chinese-display" class="text-white text-2xl font-medium">
+                <!-- Ý nghĩa (Meaning) -->
+                <p id="target-chinese-meaning" class="text-yellow-200 font-extrabold text-2xl sm:text-3xl tracking-wider px-2">Nhấn Bắt đầu</p>
+                <!-- Pinyin -->
+                <p id="target-chinese-pinyin" class="text-yellow-100 italic text-base sm:text-xl mt-1"></p>
+                <!-- Nút Nghe lại (Đọc Hán tự) -->
+                <button id="speak-button" class="mt-3 px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-full disabled:opacity-50" disabled>
+                    <svg class="w-4 h-4 inline-block align-text-bottom" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-4l-4 4v-4H9a1 1 0 01-1-1v-5a1 1 0 011-1h2l3-3 3 3h2zM7 7H5a1 1 0 00-1 1v2a1 1 0 001 1h2v-4z" clip-rule="evenodd"></path></svg>
+                    Nghe phát âm
+                </button>
+                <audio id="audio-player" class="hidden"></audio>
+            </div>
+        </div>
+
+        <!-- Khu vực hiển thị thông báo kết quả -->
+        <div id="feedback-message" class="mb-8 p-4 text-center rounded-lg font-semibold text-xl border-l-4 hidden">
+            <!-- Nội dung phản hồi sẽ được điền bằng JS -->
+        </div>
+        
+        <!-- Khu vực hiển thị chữ Hán đã chọn/chờ chọn -->
+        <div class="mb-8 p-4 text-center rounded-lg bg-yellow-50 dark:bg-yellow-900/50 border-l-4 border-yellow-500 dark:border-yellow-400 text-yellow-800 dark:text-yellow-200 font-semibold text-base sm:text-xl">
+            Bạn đã chọn: <span id="selected-char" class="text-blue-600 dark:text-blue-300 font-bold chinese-font">Chưa có</span>
+        </div>
+
+        <!-- Khu vực chứa 10 chữ Hán để chọn (Responsive Layout: 4 cột trên mobile, 5 cột trên tablet+) -->
+        <div id="chars-container" class="w-full mx-auto border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 grid grid-cols-4 md:grid-cols-5 gap-3 sm:gap-4 justify-items-center items-center relative" style="min-height: 250px;">
+            <p id="start-prompt" class="absolute inset-0 flex items-center justify-center text-lg sm:text-xl text-gray-500 dark:text-gray-400 col-span-5">
+                Chọn Bài học và nhấn "Bắt đầu Trò chơi" để bắt đầu!
+            </p>
+            <!-- Các hình tròn chữ Hán sẽ được tạo bằng JavaScript tại đây -->
+        </div>
+
+        <!-- Nút tạo lại số và Nút Trợ giúp (Responsive stacking) -->
+        <div class="flex flex-col sm:flex-row justify-center mt-10 space-y-4 sm:space-y-0 sm:space-x-4">
+            <button id="help-button" class="px-6 py-3 bg-red-500 text-white font-bold rounded-lg shadow-lg hover:bg-red-600 transition-all active:scale-95 text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                💡 Trợ giúp 50/50
+            </button>
+            <button id="generate-button" class="px-6 py-3 bg-primary-blue text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 text-lg">
+                ▶️ Bắt đầu Trò chơi
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL HIỂN THỊ KẾT QUẢ CUỐI CÙNG -->
+    <div id="game-over-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center p-4 z-50">
+        <!-- Canvas cho hiệu ứng pháo giấy -->
+        <canvas id="fireworks-canvas" class="absolute inset-0 w-full h-full"></canvas>
+
+        <div class="bg-white dark:bg-gray-700 p-8 rounded-xl shadow-2xl max-w-sm w-full text-center transform transition-all scale-100 relative z-10">
+            <h2 id="modal-title" class="text-4xl font-extrabold text-theme-green dark:text-green-400 mb-4">🎉 Hoàn Thành!</h2>
+            <p class="text-lg text-gray-700 dark:text-gray-200 mb-6">Bạn đã hoàn thành <span id="modal-total-rounds">10</span> vòng chơi.</p>
+            <p class="text-2xl font-semibold text-gray-800 dark:text-white mb-8">Kết quả cuối cùng: <span id="final-score" class="text-blue-600 dark:text-blue-400 font-extrabold">0/10</span></p>
+            <button id="restart-button-modal" class="px-6 py-3 bg-primary-blue text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 text-lg">
+                Chơi lại
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- DỮ LIỆU GIẢ LẬP ---
+        // Dữ liệu giả lập cho các bài học. Trong môi trường thực tế, dữ liệu này sẽ được tải từ các file .txt.
+        const FAKE_LESSON_DATA = {
+            'bai1': [
+                { char: '你', pinyin: 'nǐ', meaning: 'bạn, cậu' },
+                { char: '我', pinyin: 'wǒ', meaning: 'tôi' },
+                { char: '您', pinyin: 'nín', meaning: 'ngài (lịch sự)' },
+                { char: '老师', pinyin: 'lǎoshī', meaning: 'thầy/cô giáo' },
+                { char: '学生', pinyin: 'xuésheng', meaning: 'học sinh' },
+                { char: '好', pinyin: 'hǎo', meaning: 'tốt, khỏe' },
+                { char: '很', pinyin: 'hěn', meaning: 'rất' },
+                { char: '吗', pinyin: 'ma', meaning: 'không (trợ từ nghi vấn)' },
+                { char: '谢谢', pinyin: 'xièxie', meaning: 'cảm ơn' },
+                { char: '这', pinyin: 'zhè', meaning: 'này, đây' },
+                { char: '那', pinyin: 'nà', meaning: 'kia, đó' },
+                { char: '是', pinyin: 'shì', meaning: 'là' },
+                { char: '不', pinyin: 'bù', meaning: 'không (phủ định)' },
+                { char: '本子', pinyin: 'běnzi', meaning: 'vở' },
+                { char: '书', pinyin: 'shū', meaning: 'sách' },
+                { char: '你好', pinyin: 'nǐ hǎo', meaning: 'xin chào' },
+                { char: '再见', pinyin: 'zàijiàn', meaning: 'tạm biệt' },
+                { char: '陈楠', pinyin: 'Chén Nán', meaning: 'Trần Nam' },
+                { char: '国安', pinyin: 'Guó’ān', meaning: 'Quốc An' },
+            ],
+            'bai2': [
+                { char: '家', pinyin: 'jiā', meaning: 'nhà, gia đình' },
+                { char: '人', pinyin: 'rén', meaning: 'người' },
+                { char: '有', pinyin: 'yǒu', meaning: 'có' },
+                { char: '几', pinyin: 'jǐ', meaning: 'mấy, vài' },
+                { char: '个', pinyin: 'gè', meaning: 'cái, chiếc' },
+                { char: '爸爸', pinyin: 'bàba', meaning: 'bố' },
+                { char: '妈妈', pinyin: 'māma', meaning: 'mẹ' },
+                { char: '哥哥', pinyin: 'gēge', meaning: 'anh trai' },
+                { char: '姐姐', pinyin: 'jiějie', meaning: 'chị gái' },
+                { char: '弟弟', pinyin: 'dìdi', meaning: 'em trai' },
+                { char: '妹妹', pinyin: 'mèimei', meaning: 'em gái' },
+                { char: '和', pinyin: 'hé', meaning: 'và' },
+                { char: '都', pinyin: 'dōu', meaning: 'đều' },
+                { char: '工作', pinyin: 'gōngzuò', meaning: 'công việc, làm việc' },
+                { char: '医生', pinyin: 'yīshēng', meaning: 'bác sĩ' },
+                { char: '爱', pinyin: 'ài', meaning: 'yêu' },
+            ],
+            // Dữ liệu Bai 3 đã được sửa lỗi cú pháp.
+            'bai3': [
+                { char: '吃', pinyin: 'chī', meaning: 'ăn' },
+                { char: '饭', pinyin: 'fàn', meaning: 'cơm' },
+                { char: '菜', pinyin: 'cài', meaning: 'rau, món ăn' },
+                { char: '米饭', pinyin: 'mǐfàn', meaning: 'cơm trắng' },
+                { char: '面条', pinyin: 'miàntiáo', meaning: 'mì sợi' },
+                { char: '喝', pinyin: 'hē', meaning: 'uống' }, // <-- Lỗi cú pháp đã được sửa ở đây
+                { char: 'ủy', pinyin: 'shuǐ', meaning: 'nước' },
+                { char: '茶', pinyin: 'chá', meaning: 'trà' },
+                { char: '咖啡', pinyin: 'kāfēi', meaning: 'cà phê' },
+                { char: '牛奶', pinyin: 'niúnǎi', meaning: 'sữa bò' },
+            ],
+            'bai4': [
+                { char: '去', pinyin: 'qù', meaning: 'đi' },
+                { char: '哪儿', pinyin: 'nǎr', meaning: 'ở đâu' },
+                { char: '学校', pinyin: 'xuéxiào', meaning: 'trường học' },
+                { char: '圖書館', pinyin: 'túshūguǎn', meaning: 'thư viện' },
+                { char: '商店', pinyin: 'shāngdiàn', meaning: 'cửa hàng' },
+                { char: '买', pinyin: 'mǎi', meaning: 'mua' },
+                { char: '东西', pinyin: 'dōngxi', meaning: 'đồ đạc, thứ' },
+                { char: '多少', pinyin: 'duōshao', meaning: 'bao nhiêu' },
+                { char: '钱', pinyin: 'qián', meaning: 'tiền' },
+                { char: '块', pinyin: 'kuài', meaning: 'đồng (đơn vị tiền tệ)' },
+            ]
+        };
+
+        // Hàm giả lập tải dữ liệu từ file baiX.txt
+        async function fetchLessonData(lessonId) {
+            // Trong môi trường thực tế, bạn sẽ dùng fetch:
+            // const response = await fetch(`data_findword/${lessonId}/${lessonId}.txt`);
+            // const text = await response.text();
+            // CHUYỂN DỮ LIỆU TEXT THÀNH MẢNG OBJECT VÀ TRẢ VỀ
+
+            // Ở đây, chúng ta dùng dữ liệu giả lập:
+            return new Promise((resolve, reject) => {
+                if (FAKE_LESSON_DATA[lessonId]) {
+                    // Giả lập độ trễ mạng
+                    setTimeout(() => resolve(FAKE_LESSON_DATA[lessonId]), 200); 
+                } else {
+                    reject(new Error(`Không tìm thấy dữ liệu cho ${lessonId}`));
+                }
+            });
+        }
+        
+        // Cấu hình đường dẫn MP3
+        function getAudioPath(lessonId, chineseChar) {
+            // Đường dẫn thực tế theo cấu trúc bạn cung cấp:
+            const baseChar = chineseChar.replace(/\s+/g, ''); // Loại bỏ khoảng trắng trong từ vựng
+            return `data_findword/${lessonId}/mp3/${baseChar}.mp3`;
+        }
+        
+        // --- CÁC BIẾN TOÀN CỤC ---
+        const OPTIONS_COUNT = 10; 
+        const DEFAULT_ROUNDS = 10; // Mặc định 10 vòng chơi
+        let CHINESE_CHARACTERS = []; // Dữ liệu sẽ được tải vào đây
+        let MAX_ROUNDS = 0; 
+        
+        // DOM Elements
+        const charsContainer = document.getElementById('chars-container');
+        const selectedCharDisplay = document.getElementById('selected-char');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const generateButton = document.getElementById('generate-button');
+        const helpButton = document.getElementById('help-button');
+        const themeToggle = document.getElementById('theme-toggle');
+        const targetChineseMeaningDisplay = document.getElementById('target-chinese-meaning');
+        const targetChinesePinyinDisplay = document.getElementById('target-chinese-pinyin');
+        const startPrompt = document.getElementById('start-prompt');
+        const speakButton = document.getElementById('speak-button');
+        const roundSelector = document.getElementById('round-selector');
+        const lessonSelector = document.getElementById('lesson-selector');
+        // const maxRoundsInfo = document.getElementById('max-rounds-info'); // Đã loại bỏ
+        const audioPlayer = document.getElementById('audio-player');
+        
+        // Game State Variables
+        let totalRounds = DEFAULT_ROUNDS; // Mặc định là 10
+        let currentRound = 0;
+        let correctGuesses = 0;
+        let isGameActive = false;
+        let isHelpUsed = false;
+        const usedTargetIndexes = new Set(); 
+        
+        // UI Elements for Game State
+        const roundDisplay = document.getElementById('round-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const timerDisplay = document.getElementById('timer-display'); 
+        const gameOverModal = document.getElementById('game-over-modal');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const restartButtonModal = document.getElementById('restart-button-modal');
+        const modalTotalRoundsDisplay = document.getElementById('modal-total-rounds'); 
+
+        let targetCharObject = null;
+        let currentSelected = null;
+        let isDarkMode = false;
+        
+        // Timer Variables
+        const TIME_PER_ROUND = 8; 
+        let remainingTime = 0;
+        let timerInterval = null;
+        
+        // --- CONFETTI (PHÁO GIẤY) VARIABLES (Giữ nguyên) ---
+        const confettiCanvas = document.getElementById('fireworks-canvas'); 
+        const ctx = confettiCanvas.getContext('2d');
+        let particles = [];
+        let animationFrameId = null; 
+        let confettiBurstCount = 0;
+        const maxConfettiBursts = 6; 
+        const CONFETTI_COLORS = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#ffeb3b', '#ffc107', '#ff9800'];
+
+        class ConfettiParticle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.width = Math.random() * 8 + 6; 
+                this.height = Math.random() * 4 + 3;
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 15, 
+                    y: (Math.random() * -15) - 5 
+                };
+                this.gravity = 0.5; 
+                this.alpha = 1;
+                this.rotation = Math.random() * 360; 
+                this.rotationSpeed = Math.random() * 0.1 + 0.05; 
+                this.spin = Math.random() < 0.5 ? 1 : -1; 
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation * Math.PI / 180);
+                ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+                ctx.restore();
+            }
+
+            update() {
+                this.velocity.y += this.gravity;
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.velocity.x *= 0.98;
+                this.rotation += this.rotationSpeed * this.spin * 10;
+                if (this.y > confettiCanvas.height * 1.5) {
+                    this.alpha = 0; 
+                } else if (this.y > confettiCanvas.height * 0.8) {
+                    this.alpha -= 0.008;
+                }
+                this.draw();
+            }
+        }
+
+        function createConfettiBurst(x, y, count = 100) {
+            for (let i = 0; i < count; i++) {
+                const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+                particles.push(new ConfettiParticle(x, y, color));
+            }
+        }
+
+        function animateConfetti() {
+            animationFrameId = requestAnimationFrame(animateConfetti);
+            
+            ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+            particles.forEach((particle, index) => {
+                if (particle.alpha <= 0) {
+                    particles.splice(index, 1);
+                } else {
+                    particle.update();
+                }
+            });
+
+            if (confettiBurstCount < maxConfettiBursts && Math.random() < 0.1) { 
+                const x = Math.random() * confettiCanvas.width;
+                const y = confettiCanvas.height * 0.1; 
+                createConfettiBurst(x, y, 70); 
+                confettiBurstCount++; 
+            }
+            
+            if (confettiBurstCount >= maxConfettiBursts && particles.length === 0) {
+                 stopConfetti();
+                 return;
+            }
+
+            if (particles.length > 500) {
+                particles = particles.slice(particles.length - 500);
+            }
+        }
+
+        function startConfetti() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+            
+            if (!animationFrameId) {
+                particles = []; 
+                confettiBurstCount = 0; 
+                animateConfetti();
+            }
+        }
+
+        function stopConfetti() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                particles = [];
+            }
+        }
+        window.addEventListener('resize', () => {
+            if (animationFrameId) {
+                confettiCanvas.width = window.innerWidth;
+                confettiCanvas.height = window.innerHeight;
+            }
+        });
+        // --- END CONFETTI VARIABLES ---
+        
+        /**
+         * Dừng đồng hồ đếm ngược.
+         */
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timerDisplay.classList.remove('animate-pulse', 'text-red-500'); 
+            }
+        }
+
+        /**
+         * Cập nhật hiển thị đồng hồ.
+         */
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}s`;
+            timerDisplay.textContent = `${timeString}`;
+            
+            if (remainingTime <= 10 && remainingTime > 0) {
+                 timerDisplay.classList.add('animate-pulse', 'text-theme-red');
+            } else {
+                 timerDisplay.classList.remove('animate-pulse', 'text-theme-red');
+            }
+        }
+        
+        /**
+         * Bắt đầu đồng hồ đếm ngược.
+         */
+        function startTimer() {
+            stopTimer(); 
+            
+            remainingTime = totalRounds * TIME_PER_ROUND;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                remainingTime--;
+                updateTimerDisplay();
+
+                if (remainingTime <= 0) {
+                    stopTimer();
+                    isGameActive = false;
+                    showGameOver('Hết giờ!');
+                }
+            }, 1000);
+        }
+
+        /**
+         * Hàm phát âm thanh từ file MP3.
+         */
+        function speakChineseTextFromMP3(chineseChar) {
+            const lessonId = lessonSelector.value;
+            const audioPath = getAudioPath(lessonId, chineseChar);
+            
+            audioPlayer.src = audioPath;
+            speakButton.disabled = true;
+
+            audioPlayer.onerror = () => {
+                console.error(`Không thể tải file âm thanh: ${audioPath}. Sử dụng TTS thay thế.`);
+                speakChineseTextFallback(chineseChar);
+            };
+
+            audioPlayer.oncanplay = () => {
+                audioPlayer.play();
+            };
+            
+            audioPlayer.onended = () => {
+                 speakButton.disabled = false;
+            }
+        }
+        
+        /**
+         * Hàm phát âm dự phòng (sử dụng Web Speech API)
+         */
+        function speakChineseTextFallback(text) {
+             const synth = window.speechSynthesis;
+             if (!synth) {
+                 console.error("Trình duyệt không hỗ trợ Web Speech API.");
+                 return;
+             }
+
+             synth.cancel();
+
+             const utterance = new SpeechSynthesisUtterance(text);
+             utterance.lang = 'zh-CN'; 
+             utterance.rate = 0.8; 
+            
+             utterance.onend = () => {
+                 speakButton.disabled = false;
+             };
+             
+             speakButton.disabled = true;
+             synth.speak(utterance);
+        }
+
+        /**
+         * Hàm tạo ngẫu nhiên một mảng các Từ Vựng duy nhất (bao gồm cả mục tiêu).
+         */
+        function generateRandomCharacters() {
+            const currentData = CHINESE_CHARACTERS;
+            
+            const availableIndexes = [];
+            for (let i = 0; i < currentData.length; i++) {
+                if (!usedTargetIndexes.has(i)) {
+                    availableIndexes.push(i);
+                }
+            }
+
+            if (availableIndexes.length === 0 || currentData.length < OPTIONS_COUNT) {
+                return { options: [], target: null };
+            }
+            
+            // 1. Chọn mục tiêu ngẫu nhiên từ các index chưa dùng
+            const targetIndex = availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
+            const newTargetCharObject = currentData[targetIndex];
+
+            // Thêm mục tiêu vào danh sách đã dùng
+            usedTargetIndexes.add(targetIndex); 
+
+            let distractors = [];
+            let allOptions = [];
+            
+            // Lấy tất cả các Từ Vựng ngoại trừ mục tiêu
+            const pool = currentData.filter((_, index) => index !== targetIndex);
+            
+            // 2. Lấy 9 distractors ngẫu nhiên từ pool (đảm bảo không trùng)
+            const shuffledPool = pool.sort(() => Math.random() - 0.5);
+            distractors = shuffledPool.slice(0, OPTIONS_COUNT - 1);
+            
+            // 3. Kết hợp mục tiêu và distractors, sau đó xáo trộn
+            allOptions = [...distractors, newTargetCharObject].sort(() => Math.random() - 0.5);
+
+            return { 
+                options: allOptions, 
+                target: newTargetCharObject 
+            };
+        }
+
+        /**
+         * Hàm quản lý chế độ Sáng/Tối.
+         */
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark', isDarkMode);
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+
+            document.getElementById('sun-icon').classList.toggle('hidden', isDarkMode);
+            document.getElementById('moon-icon').classList.toggle('hidden', !isDarkMode);
+        }
+
+        /**
+         * Xử lý sự kiện khi người dùng click vào một từ vựng.
+         */
+        function handleCharClick(event) {
+            const circle = event.currentTarget;
+            const selectedChar = circle.getAttribute('data-char');
+            
+            if (!isGameActive || circle.classList.contains('correct-flash') || circle.classList.contains('incorrect-flash') || circle.classList.contains('hidden-circle')) {
+                return;
+            }
+            
+            if (currentSelected && currentSelected !== circle) {
+                // Đảm bảo loại bỏ lớp 'selected' khi chọn ô mới và khôi phục về trạng thái CSS
+                currentSelected.classList.remove('selected', 'bg-theme-red', 'text-white', 'correct-flash', 'incorrect-flash', 'bg-theme-green');
+                currentSelected.classList.remove('font-bold'); 
+                currentSelected.classList.add('font-medium');
+                // Loại bỏ border inline nếu có
+                currentSelected.style.border = ''; 
+            }
+            
+            currentSelected = circle;
+            selectedCharDisplay.textContent = selectedChar;
+            feedbackMessage.classList.add('hidden'); 
+
+            if (selectedChar === targetCharObject.char) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+                
+                // Khi đúng, chỉ thêm các lớp liên quan đến flash và font-bold
+                circle.classList.remove('font-medium');
+                circle.classList.add('selected', 'bg-theme-green', 'text-white', 'correct-flash', 'font-bold'); 
+                // Ghi đè màu nền và viền cho hiệu ứng flash
+                circle.style.border = '4px solid #047857'; // border dark green
+
+                correctGuesses++;
+                scoreDisplay.textContent = `Đúng: ${correctGuesses}`;
+
+                isGameActive = false;
+
+                setTimeout(() => {
+                    circle.classList.remove('correct-flash');
+                    circle.classList.add('bg-theme-green'); 
+                    circle.style.border = '4px solid #047857'; // Giữ lại border sau flash
+
+                    charsContainer.querySelectorAll('.char-circle').forEach(c => c.removeEventListener('click', handleCharClick));
+                    helpButton.disabled = true; 
+
+                    startNextRound();
+                }, 1300); 
+
+            } else {
+                // Khi sai
+                circle.classList.remove('font-medium');
+                circle.classList.add('selected', 'bg-theme-red', 'text-white', 'incorrect-flash', 'font-bold');
+                circle.style.border = '4px solid #b91c1c'; // border dark red
+                
+                setTimeout(() => {
+                    // Khôi phục về trạng thái CSS ban đầu (để CSS Dark Mode có hiệu lực)
+                    circle.classList.remove('selected', 'bg-theme-red', 'text-white', 'incorrect-flash', 'font-bold');
+                    circle.classList.add('font-medium');
+                    circle.style.border = ''; // Loại bỏ border inline
+                    currentSelected = null; 
+                    selectedCharDisplay.textContent = 'Chưa có';
+                }, 1300); 
+            }
+        }
+
+        /**
+         * Hàm xử lý trợ giúp 50/50.
+         */
+        function handleFiftyFiftyHelp() {
+            if (isHelpUsed || targetCharObject === null || !isGameActive) {
+                return;
+            }
+
+            const incorrectCircles = Array.from(charsContainer.querySelectorAll('.char-circle'))
+                .filter(circle => 
+                    circle.getAttribute('data-char') !== targetCharObject.char &&
+                    !circle.classList.contains('hidden-circle')
+                );
+
+            const charsToRemoveCount = Math.floor(incorrectCircles.length / 2);
+            
+            if (charsToRemoveCount < 1) {
+                feedbackMessage.textContent = `Không có đủ đáp án sai để loại bỏ. Hãy tự tin chọn!`;
+                feedbackMessage.className = 'mb-8 p-4 text-center rounded-lg bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 text-yellow-800 dark:text-yellow-200 font-semibold text-xl';
+                feedbackMessage.classList.remove('hidden');
+                helpButton.disabled = true;
+                isHelpUsed = true;
+                return;
+            }
+
+            const circlesToKeep = [...incorrectCircles];
+            const circlesToRemove = [];
+
+            while (circlesToRemove.length < charsToRemoveCount && circlesToKeep.length > 0) {
+                const randomIndex = Math.floor(Math.random() * circlesToKeep.length);
+                circlesToRemove.push(circlesToKeep.splice(randomIndex, 1)[0]);
+            }
+            
+            circlesToRemove.forEach(circle => {
+                circle.classList.add('hidden-circle');
+                circle.removeEventListener('click', handleCharClick); 
+            });
+
+            isHelpUsed = true;
+            helpButton.disabled = true;
+            helpButton.textContent = 'Đã dùng (50/50)';
+            
+            feedbackMessage.classList.add('hidden');
+        }
+
+        /**
+         * Hàm hiển thị Modal chúc mừng và kết thúc trò chơi.
+         */
+        function showGameOver(message = 'Hoàn Thành!') {
+            stopTimer(); 
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+
+            isGameActive = false;
+            generateButton.textContent = '▶️ Chơi lại'; 
+            helpButton.disabled = true;
+            speakButton.disabled = true;
+
+            finalScoreDisplay.textContent = `${correctGuesses}/${totalRounds}`;
+            modalTotalRoundsDisplay.textContent = totalRounds; 
+
+            const modalTitle = document.getElementById('modal-title');
+            if (message === 'Hết giờ!') {
+                modalTitle.textContent = '⏱️ Hết Giờ!';
+                modalTitle.classList.remove('text-theme-green', 'dark:text-green-400');
+                modalTitle.classList.add('text-theme-red', 'dark:text-red-400');
+                stopConfetti(); 
+            } else {
+                 modalTitle.textContent = '🎉 Hoàn Thành!';
+                 modalTitle.classList.remove('text-theme-red', 'dark:text-red-400');
+                 modalTitle.classList.add('text-theme-green', 'dark:text-green-400');
+                 startConfetti();
+            }
+            
+            gameOverModal.classList.remove('hidden');
+            gameOverModal.classList.add('flex');
+        }
+
+        /**
+         * Hàm bắt đầu vòng chơi mới (hoặc kiểm tra kết thúc game).
+         */
+        function startNextRound() {
+            if (currentRound >= totalRounds) {
+                showGameOver(); 
+                return;
+            }
+            
+            const charData = generateRandomCharacters();
+
+            // Kiểm tra xem còn đủ từ vựng để tạo vòng chơi hay không
+            if (usedTargetIndexes.size >= CHINESE_CHARACTERS.length || charData.target === null) {
+                // Nếu đã dùng hết hoặc không đủ từ vựng cho vòng chơi
+                if (usedTargetIndexes.size > 0) {
+                     showGameOver('Bộ từ vựng đã được dùng hết!');
+                } else {
+                     showGameOver('Bộ từ vựng quá ít (dưới 10 từ) hoặc không có từ!');
+                }
+                return;
+            }
+            
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+            
+            currentRound++;
+            isGameActive = true;
+            isHelpUsed = false; 
+            helpButton.disabled = false;
+            
+            roundDisplay.textContent = `Vòng: ${currentRound}/${totalRounds}`;
+            generateButton.textContent = '✨ Bỏ qua/Tạo lại Từ Mới'; 
+            startPrompt.classList.add('hidden'); 
+            
+            charsContainer.innerHTML = '';
+            currentSelected = null;
+            selectedCharDisplay.textContent = 'Chưa có';
+            feedbackMessage.classList.add('hidden');
+
+            targetCharObject = charData.target;
+
+            // Cập nhật mục tiêu
+            targetChineseMeaningDisplay.textContent = targetCharObject.meaning.toUpperCase();
+            targetChinesePinyinDisplay.textContent = `(${targetCharObject.pinyin})`;
+
+            // Phát âm Từ Vựng mục tiêu (sử dụng MP3)
+            speakChineseTextFromMP3(targetCharObject.char);
+
+
+            // Tạo các hình tròn chữ Hán/Từ vựng
+            charData.options.forEach(charObj => {
+                const circle = document.createElement('div');
+                // CHỈ SỬ DỤNG LỚP char-circle và font-medium
+                circle.className = 'char-circle chinese-font flex items-center justify-center text-center rounded-full font-medium cursor-pointer p-1'; 
+                circle.setAttribute('data-char', charObj.char);
+                circle.textContent = charObj.char;
+                circle.addEventListener('click', handleCharClick);
+
+                charsContainer.appendChild(circle);
+            });
+            
+            console.log(`[DEBUG] Vòng ${currentRound}/${totalRounds}. Mục Tiêu: ${targetCharObject.char} (${targetCharObject.meaning}). Đã dùng ${usedTargetIndexes.size} từ vựng.`); 
+        }
+
+        /**
+         * Bắt đầu một game mới (reset tất cả).
+         */
+        async function restartGame() {
+            // Tải dữ liệu bài học mới nhất
+            const lessonId = lessonSelector.value;
+            showLoadingState(`Đang tải từ vựng cho ${lessonId}...`);
+
+            try {
+                const data = await fetchLessonData(lessonId);
+                CHINESE_CHARACTERS = data;
+                MAX_ROUNDS = CHINESE_CHARACTERS.length;
+                
+                // --- Thay đổi quan trọng: Đặt tổng số vòng chơi cố định ---
+                totalRounds = DEFAULT_ROUNDS; 
+                // Nếu số từ vựng ít hơn mặc định, giới hạn lại totalRounds
+                if (MAX_ROUNDS < totalRounds) {
+                    totalRounds = MAX_ROUNDS;
+                }
+                // --- Kết thúc thay đổi ---
+
+                // Kiểm tra đủ từ vựng để chơi (cần ít nhất 10 từ để tạo các distractors)
+                if (MAX_ROUNDS < OPTIONS_COUNT) {
+                    showErrorState(`Lỗi: Bài ${lessonId} chỉ có ${MAX_ROUNDS} từ. Cần tối thiểu ${OPTIONS_COUNT} từ để chơi.`);
+                    return;
+                }
+
+                // Reset game state
+                stopTimer(); 
+                
+                // Hiển thị thông báo nếu số vòng chơi bị giới hạn
+                if (totalRounds < DEFAULT_ROUNDS) {
+                    document.getElementById('feedback-message').textContent = `Lưu ý: Chỉ có ${MAX_ROUNDS} từ vựng. Số vòng chơi đã được giới hạn thành ${MAX_ROUNDS}.`;
+                    document.getElementById('feedback-message').className = 'mb-8 p-4 text-center rounded-lg bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 text-yellow-800 dark:text-yellow-200 font-semibold text-xl';
+                    document.getElementById('feedback-message').classList.remove('hidden');
+                } else {
+                    document.getElementById('feedback-message').classList.add('hidden');
+                }
+
+                gameOverModal.classList.add('hidden');
+                gameOverModal.classList.remove('flex');
+                
+                currentRound = 0;
+                correctGuesses = 0;
+                usedTargetIndexes.clear(); 
+                isGameActive = true;
+                
+                startTimer(); 
+                startNextRound();
+
+            } catch (error) {
+                console.error("Lỗi tải dữ liệu bài học:", error);
+                showErrorState(`Không thể tải dữ liệu: ${error.message}. Vui lòng kiểm tra file ${lessonId}/${lessonId}.txt.`);
+            }
+        }
+        
+        // --- CÁC HÀM TIỆN ÍCH UI ---
+        
+        // Hàm này không còn cần thiết vì số vòng là cố định
+        function updateRoundOptions(maxRounds) {
+            // maxRoundsInfo.textContent = maxRounds; // Đã loại bỏ
+            
+            // Cập nhật totalRounds dựa trên số từ vựng (Nếu ít hơn 10)
+            totalRounds = Math.min(DEFAULT_ROUNDS, maxRounds);
+        }
+
+        function showLoadingState(message) {
+            stopTimer();
+            isGameActive = false;
+            generateButton.textContent = 'Đang tải...';
+            generateButton.disabled = true;
+            helpButton.disabled = true;
+            speakButton.disabled = true;
+            targetChineseMeaningDisplay.textContent = message;
+            targetChinesePinyinDisplay.textContent = '';
+            charsContainer.innerHTML = '';
+            startPrompt.classList.remove('hidden');
+            startPrompt.textContent = message;
+            roundDisplay.textContent = `Vòng: 0/${totalRounds}`; 
+        }
+
+        function showErrorState(message) {
+             showLoadingState(message); // Dùng UI loading để hiển thị lỗi
+             generateButton.textContent = '▶️ Bắt đầu Trò chơi';
+             generateButton.disabled = false;
+             targetChineseMeaningDisplay.textContent = 'LỖI TẢI DỮ LIỆU';
+             targetChinesePinyinDisplay.textContent = 'Vui lòng chọn bài học khác';
+             startPrompt.textContent = message;
+        }
+
+        /**
+         * Thiết lập trạng thái ban đầu khi tải trang.
+         */
+        function initializeGameOnLoad() {
+            // Không cần tải voice, chỉ dùng MP3
+            
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                isDarkMode = true;
+                document.body.classList.add('dark');
+                document.getElementById('moon-icon').classList.remove('hidden');
+                document.getElementById('sun-icon').classList.add('hidden');
+            }
+            
+            // Khởi tạo hiển thị ban đầu
+            lessonSelector.dispatchEvent(new Event('change'));
+            
+            // Cố định totalRounds và thời gian
+            totalRounds = DEFAULT_ROUNDS; 
+            remainingTime = totalRounds * TIME_PER_ROUND;
+            updateTimerDisplay(); 
+
+            // Giao diện tĩnh ban đầu
+            currentRound = 0;
+            correctGuesses = 0;
+            isGameActive = false;
+            isHelpUsed = false;
+            stopConfetti(); // Phải dừng khi khởi tạo
+            stopTimer(); 
+
+            roundDisplay.textContent = `Vòng: 0/${totalRounds}`; 
+            scoreDisplay.textContent = `Đúng: 0`;
+            generateButton.textContent = '▶️ Bắt đầu Trò chơi';
+            helpButton.disabled = true;
+            speakButton.disabled = true;
+            gameOverModal.classList.add('hidden');
+            charsContainer.innerHTML = '';
+            startPrompt.classList.remove('hidden');
+            startPrompt.textContent = `Chọn Bài học và nhấn "Bắt đầu Trò chơi" để chơi!`; 
+            targetChineseMeaningDisplay.textContent = 'Nhấn Bắt đầu'; 
+            targetChinesePinyinDisplay.textContent = ''; 
+            selectedCharDisplay.textContent = 'Chưa có';
+            feedbackMessage.classList.add('hidden');
+
+            // Gán sự kiện cho các nút
+            generateButton.addEventListener('click', restartGame);
+            themeToggle.addEventListener('click', toggleTheme);
+            helpButton.addEventListener('click', handleFiftyFiftyHelp);
+            restartButtonModal.addEventListener('click', restartGame);
+            
+            // Nút Phát âm bây giờ gọi hàm phát MP3
+            speakButton.addEventListener('click', () => {
+                const text = targetCharObject ? targetCharObject.char : null;
+                if (text) {
+                    speakChineseTextFromMP3(text);
+                }
+            });
+
+            // Cập nhật khi chọn Bài học mới
+            lessonSelector.addEventListener('change', async (e) => {
+                const lessonId = e.target.value;
+                showLoadingState(`Đang kiểm tra từ vựng cho ${lessonId}...`);
+                
+                try {
+                    const data = await fetchLessonData(lessonId);
+                    const newMaxRounds = data.length;
+                    
+                    updateRoundOptions(newMaxRounds); // Cập nhật totalRounds dựa trên số từ
+
+                    // Cập nhật hiển thị Vòng và prompt bắt đầu
+                    // totalRounds đã được cập nhật bên trong updateRoundOptions
+                    remainingTime = totalRounds * TIME_PER_ROUND;
+                    updateTimerDisplay();
+                    
+                    roundDisplay.textContent = `Vòng: 0/${totalRounds}`;
+                    startPrompt.textContent = `Đã tải ${newMaxRounds} từ. Chơi ${totalRounds} vòng. Nhấn "Bắt đầu Trò chơi" để chơi!`;
+                    targetChineseMeaningDisplay.textContent = 'Sẵn sàng';
+                    targetChinesePinyinDisplay.textContent = `Bài ${lessonId}`;
+
+                    generateButton.disabled = false;
+                    speakButton.disabled = true; // Chỉ bật khi có từ mục tiêu
+                    
+                    // Reset trạng thái chơi
+                    currentRound = 0;
+                    correctGuesses = 0;
+                    usedTargetIndexes.clear(); 
+                    isGameActive = false;
+
+                } catch (error) {
+                     showErrorState(`Lỗi tải dữ liệu: ${error.message}`);
+                }
+            });
+            
+        }
+
+        // Khởi tạo lần đầu
+        window.onload = initializeGameOnLoad;
+    </script>
+</body>
+</html>
