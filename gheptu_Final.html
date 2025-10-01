@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trò chơi Ghép chữ Hán (Phiên Bản Đơn Sắc)</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Tải Font Mulish (Tiếng Việt/Giao diện) và Ma Shan Zheng (Hán tự) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Ma+Shan+Zheng&family=Mulish:ital,wght@0,200..900;1,200..900&display=swap');
+        
+        /* Cập nhật màu nền giống 2048 */
+        body {
+            font-family: 'Mulish', 'Inter', sans-serif; 
+            background-color: #faf8ef; /* Rất giống nền 2048 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Định kiểu cho các ô chữ Hán */
+        .hanzi-tile {
+            width: 100%;
+            padding-top: 100%; /* Tạo hình vuông */
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            /* Xóa border và shadow mặc định */
+            box-shadow: none; 
+            border: none;
+            border-radius: 6px; /* Bo góc nhẹ */
+            background-color: #cdc1b4; /* Màu ô trống, giống 2048 */
+        }
+
+        /* Lưới 2048 */
+        #hanzi-grid {
+             background-color: #bbada0; /* Màu nền lưới, giống 2048 */
+             padding: 10px;
+             border-radius: 6px;
+             /* Đảm bảo ô chữ Hán không có màu nền mặc định, mà do JS gán */
+        }
+        
+        .hanzi-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Kaiti', 'SimSun', sans-serif; 
+            font-size: 1.5rem; 
+            font-weight: 580; /* Dùng font đậm hơn */
+            color: #776e65; /* Màu chữ tối mặc định */
+            transition: transform 0.1s;
+        }
+
+        /* Responsive: Tăng kích thước chữ Hán trên màn hình lớn hơn (>= 768px) */
+        @media (min-width: 768px) {
+            .hanzi-content {
+                font-size: 3rem; 
+            }
+        }
+        /* Chữ Hán lớn trong Modal Từ điển cũng dùng font Hán */
+        #modal-hanzi {
+             font-family: 'Kaiti', 'SimSun', sans-serif; 
+             font-weight: 580; /* Dùng font đậm hơn */
+        }
+
+       #modal-pinyin{
+             font-size: 1.5rem; 
+        }
+       #modal-vn{
+             font-size: 1.2rem; 
+        }
+       #modal-example{
+             font-size: 1.2rem; 
+        }
+
+        /* Trạng thái được chọn */
+        .selected {
+            /* Vẫn dùng màu xanh dương để làm nổi bật ô đang được chọn */
+            background-color: #3b82f6 !important; 
+            transform: scale(0.95);
+            color: #ffffff !important;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        /* Đảm bảo chữ Hán bên trong ô đã chọn có màu trắng */
+        .selected .hanzi-content {
+            color: #ffffff !important; 
+        }
+
+        /* Trạng thái ghép đúng */
+        .correct {
+            animation: correct-fade 0.5s forwards; 
+        }
+        @keyframes correct-fade {
+            0% { background-color: #34d399; opacity: 1; transform: scale(1); } 
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        /* Trạng thái ghép sai */
+        .wrong {
+            animation: wrong-shake 0.5s ease-in-out;
+            background-color: #f9f6f2 !important; /* Màu nền ô sai (Giống màu ô 2) */
+            color: #f9f6f2 !important; 
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+        }
+        @keyframes wrong-shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        /* Thêm CSS cho hiệu ứng điểm bay */
+        .flying-score {
+            position: fixed;
+            z-index: 1000;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00FF00; /* Màu xanh lá cây */
+            opacity: 1;
+            pointer-events: none;
+            transition: transform 0.8s ease-out, opacity 0.5s linear 0.5s;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            will-change: transform, opacity; 
+        }
+
+
+        .main-grid {
+            max-width: 500px;
+            width: 100%; 
+            margin: auto;
+        }
+        
+        /* Modal Backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
+        
+        /* DARK MODE STYLES: Giữ nguyên logic Dark Mode nhưng màu tối sẽ là màu tối riêng của 2048 */
+        .dark {
+            background-color: #333; /* Nền tối chung */
+        }
+        .dark body {
+            background-color: #333;
+        }
+
+        .dark #game-container {
+            background-color: #555; /* gray-800 */
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -2px rgba(0,0,0,0.2);
+        }
+        
+        .dark #hanzi-grid {
+             background-color: #444; /* Màu nền lưới tối */
+        }
+
+
+        .dark .text-gray-700 { color: #d1d5db; } 
+        .dark .text-gray-500 { color: #9ca3af; } 
+        .dark .text-gray-600 { color: #d1d5db; } 
+        .dark .text-gray-800 { color: #f3f4f6; } 
+
+        .dark .hanzi-tile {
+            /* Màu ô trống tối */
+            background-color: #666; 
+        }
+        .dark .hanzi-content {
+            color: #f3f4f6; /* Đảm bảo màu chữ là trắng/rất sáng trong Dark Mode */
+        }
+
+        .dark #selection-display {
+            background-color: #4f46e5; 
+            color: #e0e7ff; 
+        }
+        
+        .dark #dictionary-modal div, .dark #gameover-modal div {
+            background-color: #555; 
+        }
+
+        .dark #dictionary-modal .text-gray-500 { color: #9ca3af; }
+        .dark .dark #dictionary-modal .border-t { border-color: #374151; }
+        
+        /* CẬP NHẬT CSS: Đảm bảo hiệu ứng gợi ý phù hợp với Dark Mode */
+        /* HINT PULSE LÀ LỚP CHUNG CHO HIỆU ỨNG NHẤP NHÁY */
+        .hanzi-tile.hint-pulse {
+             color: #776e65 !important;
+        }
+
+        .dark .hanzi-tile.hint-pulse {
+             background-color: #b45309 !important; /* Màu Cam Đậm */
+             color: #f3f4f6 !important;
+        }
+        .dark .hanzi-tile.hint-pulse .hanzi-content {
+             color: #f3f4f6 !important;
+        }
+
+        #level-progress, #level-info {
+            display: none;
+        }
+        
+    </style>
+    <!-- Thêm thư viện Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    
+    <!-- Tải Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Bật chế độ Debug cho Firebase
+        setLogLevel('Debug');
+
+        // Định nghĩa các biến toàn cục (sẽ được Canvas cung cấp)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-hanzi-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        // KHẮC PHỤC LỖI: initialAuthToken là JWT Token (chuỗi string), không cần JSON.parse
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
+
+        let app, db, auth, userId = null;
+
+        // Khởi tạo Firebase và xác thực người dùng
+        if (firebaseConfig) {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            window.db = db; // Gán cho window để JS bên dưới có thể truy cập
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    // Đã bỏ cập nhật ID người dùng trên giao diện
+                    // Bắt đầu lắng nghe Điểm Cao Nhất sau khi xác thực
+                    listenForBestScore();
+                } else {
+                    // Xử lý xác thực ban đầu
+                    try {
+                        if (initialAuthToken) {
+                            // SỬ DỤNG CHUỖI TOKEN TRỰC TIẾP
+                            await signInWithCustomToken(auth, initialAuthToken); 
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error("Lỗi xác thực Firebase:", error);
+                        // Vẫn chạy game nhưng không có lưu điểm
+                    }
+                }
+            });
+        } else {
+            console.warn("Không tìm thấy cấu hình Firebase. Game sẽ chạy nhưng không lưu điểm cao.");
+        }
+
+        // Lắng nghe Điểm Cao Nhất từ Firestore (Dữ liệu công khai)
+        function listenForBestScore() {
+            if (!db) return;
+            const docRef = doc(db, "artifacts", appId, "public", "data", "hanzi_match_scores", "best_score");
+
+            onSnapshot(docRef, (doc) => {
+                if (doc.exists()) {
+                    const score = doc.data().score || 0;
+                    window.updateBestScore(score); // Cập nhật Best Score trong logic game
+                } else {
+                    console.log("Chưa có Best Score trên Firestore.");
+                }
+            }, (error) => {
+                console.error("Lỗi khi lắng nghe Best Score:", error);
+            });
+        }
+
+        // Hàm lưu Điểm Cao Nhất vào Firestore
+        window.saveBestScore = async (newScore) => {
+            if (!db || !userId) return;
+
+            const docRef = doc(db, "artifacts", appId, "public", "data", "hanzi_match_scores", "best_score");
+            
+            try {
+                // Kiểm tra xem điểm hiện tại có cao hơn điểm trên Firestore không
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const currentBest = docSnap.data().score || 0;
+                    if (newScore > currentBest) {
+                        await setDoc(docRef, { score: newScore, userId: userId, updated: new Date().toISOString() });
+                        console.log("Đã cập nhật Best Score mới:", newScore);
+                    }
+                } else {
+                    // Lưu lần đầu
+                    await setDoc(docRef, { score: newScore, userId: userId, updated: new Date().toISOString() });
+                }
+            } catch (e) {
+                console.error("Lỗi khi lưu Best Score:", e);
+            }
+        };
+    </script>
+</head>
+<body class="bg-gray-50 antialiased">
+    <!-- Thêm thẻ Audio ẩn để phát file MP3 -->
+    <audio id="audio-player" style="display: none;"></audio>
+
+    <!-- CẬP NHẬT: p-4 rounded-xl shadow-xl (cho desktop) -->
+    <!-- px-4 py-6 rounded-none shadow-none (cho mobile, tràn viền) -->
+    <div id="game-container" class="main-grid bg-white px-4 py-6 rounded-none shadow-none md:p-4 md:rounded-xl md:shadow-xl transition-all duration-300 min-h-screen md:min-h-0">
+        
+        <!-- Thanh Thông Tin -->
+        <div class="flex justify-between items-center mb-4 text-gray-700">
+            <div>
+                <!-- Tiêu đề chính -->
+                <div class="text-xl font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-400 mb-0.5">
+                    Ghép Hán tự 拼汉字
+                </div>
+                
+                <!-- Nút chuyển đổi Dark Mode -->
+                <button id="dark-mode-toggle" class="mt-1 flex items-center text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition duration-150">
+                    <span id="dark-mode-icon" class="mr-1">🌙</span> Chế độ
+                </button>
+            </div>
+            
+            <div class="text-sm font-semibold uppercase text-right">
+                <p>Điểm: <span id="current-score" class="text-blue-600 text-lg">0</span></p>
+                <p class="text-xs text-gray-500">Cao Nhất: <span id="best-score" class="text-green-600">0</span></p>
+            </div>
+        </div>
+        
+        <!-- KHU VỰC THÊM DROP DOWN CHỌN BÀI HỌC -->
+        <div class="mb-4">
+            <label for="lesson-select" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"></label>
+            <select id="lesson-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <!-- Thêm một vài tùy chọn giả định. Bạn có thể thêm số lượng bài học tùy ý ở đây -->
+                <option value="1">Bài 1 老师您好！Em chào thầy ạ!</option> 
+
+            </select>
+        </div>
+        <!-- KẾT THÚC DROP DOWN -->
+        
+        <!-- Thanh Mục tiêu (Ẩn - Chỉ dùng để thông báo tổng tiến trình) -->
+        <p id="total-progress-display" class="text-sm font-bold text-gray-700 mb-2">
+            Đã ghép: <span id="matched-count">0</span>/<span id="total-words">0</span> từ
+        </p>
+        <div id="level-progress">
+            <div id="level-bar"></div>
+        </div>
+        
+        <!-- Khu vực hiển thị từ đang ghép -->
+        <div id="selection-display" class="min-h-[50px] mb-4 p-2 bg-indigo-50 rounded-lg shadow-inner flex items-center justify-center text-xl font-bold text-indigo-700 transition-all duration-300">
+            <!-- Chữ Hán đang ghép sẽ hiển thị ở đây -->
+        </div>
+
+        <!-- Lưới Chơi 4x4 -->
+        <div id="hanzi-grid" class="grid grid-cols-4 gap-2">
+            <!-- Các ô chữ Hán sẽ được render bằng JS -->
+        </div>
+
+        <!-- Thông báo Combo/Level -->
+        <div id="message-area" class="h-6 mt-4 text-center font-bold text-lg text-yellow-600">
+            <!-- Thông báo combo sẽ hiển thị ở đây -->
+        </div>
+
+        <!-- Khu Điều Khiển: SỬ DỤNG FLEX BÌNH THƯỜNG cho MOBILE và DESKTOP (luôn hiển thị ngang) -->
+        <div class="flex justify-between gap-2 mt-6"> 
+            <button id="restart-btn" class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition  uppercase text-sm">
+                <span class="text-lg">🔄</span> Chơi Lại
+            </button>
+            <button id="hint-btn" class="flex-1 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-xl transition  uppercase text-sm disabled:opacity-50">
+                <span class="text-lg">💡</span> Gợi Ý (<span id="hint-count">30</span>)
+            </button>
+            <!-- Nút Next Level đã bị xóa, chỉ còn 2 nút chính -->
+        </div>
+
+    </div>
+
+    <!-- Modal Từ Điển / Game Over -->
+    <div id="dictionary-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full transition-transform transform scale-95" role="dialog">
+            <!-- Nút Nghe lại (Speaker Button) -->
+            <div class="flex justify-between items-center mb-3">
+                <h3 id="modal-title" class="text-3xl font-bold text-green-600">Chính xác</h3>
+                <button id="speaker-btn" class="text-2xl text-green-600 hover:text-green-700 transition disabled:opacity-50" aria-label="Nghe từ">
+                    🔊
+                </button>
+            </div>
+            
+            <p id="modal-hanzi" class="text-5xl font-extrabold text-center my-4 text-gray-800"></p>
+            <p id="modal-pinyin" class="text-2xl text-center font-mono text-green-600 mb-2"></p>
+            <p id="modal-vn" class="text-lg text-center text-gray-600 mb-4"></p>
+            <p id="modal-example" class="text-sm italic text-gray-500 border-t pt-2 mt-2">Ví dụ: <span id="modal-example-text"></span></p>
+
+            <!-- Đã loại bỏ nút Đóng để thực hiện tự động đóng -->
+        </div>
+    </div>
+    
+    <!-- Game Over / Victory Modal -->
+    <div id="gameover-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full text-center transition-transform transform scale-95" role="dialog">
+            <h3 id="gameover-title" class="text-4xl font-extrabold text-red-600 mb-3">HẾT GAME!</h3>
+            <p class="text-xl text-gray-700 mb-2">Điểm cuối cùng:</p>
+            <p id="final-score" class="text-6xl font-black text-blue-600 mb-4">0</p>
+            <p id="best-score-update" class="text-md text-green-700 font-semibold mb-6"></p>
+
+            <button onclick="window.restartGame(); document.getElementById('gameover-modal').classList.add('hidden');" class="w-full py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition shadow-lg">Chơi Lại</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CÁC BIẾN DỮ LIỆU ĐÃ CẬP NHẬT ---
+        let WORD_LIST_RAW = [];         
+        let WORD_LIST_WITH_IDS = [];    
+        // Biến LESSON_AUDIO_TIMESTAMPS đã được loại bỏ
+
+        const GRID_SIZE = 4;
+        const TOTAL_CELLS = GRID_SIZE * GRID_SIZE;
+
+        // --- Trạng Thái Game MỚI ---
+        let gridState = [];             
+        let currentScore = 0;
+        let bestScore = 0;
+        let selectedTiles = [];
+        let comboCount = 0;
+        let hintCount = 3;               
+        let isProcessing = false;
+        let currentLesson = '1'; 
+
+        let UNSOLVED_WORDS = [];        
+        let AVAILABLE_CHAR_POOL = [];   
+        let totalWordsMatched = 0;      
+        let currentHanziToSpeak = ''; 
+
+        // --- DOM Elements ---
+        const gridElement = document.getElementById('hanzi-grid');
+        const scoreElement = document.getElementById('current-score');
+        const bestScoreElement = document.getElementById('best-score');
+        const selectionDisplay = document.getElementById('selection-display');
+        const messageArea = document.getElementById('message-area');
+        const hintCountElement = document.getElementById('hint-count');
+        const hintBtn = document.getElementById('hint-btn');
+        const matchedCountElement = document.getElementById('matched-count');
+        const totalWordsElement = document.getElementById('total-words');
+        const gameoverTitleElement = document.getElementById('gameover-title');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const darkModeIcon = document.getElementById('dark-mode-icon');
+        const speakerBtn = document.getElementById('speaker-btn');
+        const lessonSelect = document.getElementById('lesson-select');
+        const audioPlayer = document.getElementById('audio-player'); 
+
+        // --- MAPPING CẤU TRÚC THƯ MỤC GIẢ ĐỊNH ---
+        const BASE_PATH = '/data_ghephantu/'; 
+        
+        // --- Bảng Màu 2048 (Đơn Sắc) ---
+        const LIGHT_TILE_COLOR = { bg: '#f9f6f2', text: '#776e65', lightText: true }; 
+        const DARK_TILE_COLOR = { bg: '#a39b95', text: '#f9f4f6', lightText: false }; 
+        const EMPTY_TILE_COLOR = { bg: '#cdc1b4', text: '#776e65', lightText: true }; 
+        const LIGHT_MODE_HINT_COLOR = '#f2b179'; 
+        const LIGHT_MODE_HINT_TEXT_COLOR = '#f9f6f2'; 
+        
+        // ----------------------------------------------------
+        // --- LOGIC PHÁT ÂM (ƯU TIÊN MP3 TỪ FILE RIÊNG LẺ, DỰ PHÒNG WEB SPEECH) ---
+        // ----------------------------------------------------
+
+        // 1. Phát âm bằng Web Speech API (Giữ nguyên)
+        const speakHanzi = (text) => {
+            if (!('speechSynthesis' in window)) {
+                console.warn('Trình duyệt không hỗ trợ Web Speech API.');
+                return;
+            }
+
+            if (window.speechSynthesis.speaking) {
+                 window.speechSynthesis.cancel();
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN'; 
+            
+            const voices = window.speechSynthesis.getVoices();
+            const chineseVoice = voices.find(voice => voice.lang === 'zh-CN' || voice.lang === 'zh-TW');
+
+            if (chineseVoice) {
+                utterance.voice = chineseVoice;
+            }
+
+            utterance.rate = 1.2; 
+            
+            speakerBtn.disabled = true;
+            speakerBtn.textContent = '▶️';
+            
+            utterance.onend = () => {
+                speakerBtn.disabled = false;
+                speakerBtn.textContent = '🔊';
+            };
+            
+            utterance.onerror = (event) => {
+                console.error('Lỗi phát âm Web Speech:', event.error);
+                speakerBtn.disabled = false;
+                speakerBtn.textContent = '❌';
+            };
+
+            window.speechSynthesis.speak(utterance);
+        };
+
+        // 2. Hàm Phát Âm Chính (Ưu tiên MP3 từ file [Từ].mp3)
+        const playAudioFromLesson = (lessonNumber, hanziText) => {
+            // Hủy Web Speech nếu đang nói
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
+            // Dừng file MP3 hiện tại nếu đang phát
+            audioPlayer.pause();
+            audioPlayer.removeAttribute('src'); 
+
+            // Xây dựng đường dẫn TỪ ĐƠN LẺ theo cấu trúc mới: 
+            // /data_flashcard/baiX/mp3/Từ.mp3
+            const audioPath = `${BASE_PATH}bai${lessonNumber}/mp3/${hanziText}.mp3`;
+            
+            speakerBtn.disabled = true;
+            speakerBtn.textContent = 'Đang tải...';
+
+            // Hàm dự phòng (Fallback)
+            const playFallback = (text, reason) => {
+                 //messageArea.textContent = `Phát âm: ${reason}. Dùng Web Speech API...`;
+                 speakerBtn.textContent = '🔊';
+                 speakHanzi(text); 
+            };
+            
+            // Xóa hết event cũ để tránh trùng lặp
+            audioPlayer.onloadedmetadata = null;
+            audioPlayer.oncanplaythrough = null;
+            audioPlayer.onerror = null;
+            audioPlayer.onended = null;
+
+            // Sự kiện chính: khi metadata được tải (tức là file hợp lệ)
+            audioPlayer.onloadedmetadata = () => {
+                audioPlayer.currentTime = 0; 
+                audioPlayer.play().then(() => {
+                    console.log(`Đang phát MP3 từ file: ${hanziText}.mp3`);
+                    speakerBtn.textContent = '▶️';
+                }).catch(e => {
+                    console.warn(`Lỗi khi cố gắng phát MP3.`, e);
+                    playFallback(hanziText, `Lỗi phát MP3 (${e.message})`);
+                });
+            };
+            
+            // Xử lý lỗi tải file (File không tồn tại, lỗi 404, v.v.)
+            audioPlayer.onerror = () => {
+                console.warn(`Không tìm thấy file MP3: ${audioPath}. Chuyển sang Web Speech.`);
+                playFallback(hanziText, 'Không tìm thấy file MP3');
+            };
+            
+            // Xử lý khi kết thúc phát
+            audioPlayer.onended = () => {
+                speakerBtn.textContent = '🔊';
+                speakerBtn.disabled = false;
+            };
+
+            // Gán src và tải file (việc này sẽ kích hoạt 'loadedmetadata' hoặc 'error')
+            audioPlayer.src = audioPath;
+            audioPlayer.load();
+        };
+
+        // 3. Xử lý sự kiện khi click nút Speaker
+        const handleSpeakerClick = () => {
+            // Chỉ cần hanziText và lessonNumber để xây dựng đường dẫn file MP3
+            if (currentHanziToSpeak) {
+                 playAudioFromLesson(currentLesson, currentHanziToSpeak);
+            } else {
+                 //messageArea.textContent = 'Không có từ nào để phát âm.';
+            }
+        };
+
+
+        // ----------------------------------------------------
+        // --- HÀM TẢI VÀ PHÂN TÍCH DỮ LIỆU TỪ FILE TXT ---
+        // ----------------------------------------------------
+        const loadAndParseLesson = async (lessonNumber) => {
+            currentLesson = lessonNumber; 
+            const filePath = `${BASE_PATH}bai${lessonNumber}/bai${lessonNumber}.txt`;
+            
+            try {
+                //messageArea.textContent = `Đang tải dữ liệu Bài ${lessonNumber}...`;
+
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error(`Không tìm thấy file: ${filePath}`);
+                }
+                const text = await response.text();
+                
+                const lines = text.trim().split('\n');
+                let newWordList = [];
+                let wordsFiltered = 0; 
+                // LESSON_AUDIO_TIMESTAMPS đã được loại bỏ
+
+                lines.forEach((line, index) => {
+                    if (line.trim() === '' || line.startsWith('#') || line.startsWith('//')) return; 
+                    
+                    const parts = line.split('|').map(p => p.trim());
+                    
+                    if (parts.length < 6) {
+                        console.warn(`Dòng ${index + 1} không đủ 6 phần tử: ${line}`);
+                        return;
+                    } 
+
+                    const hanzi = parts[0];
+                    const pinyin = parts[1];
+                    const vn = parts[2];
+                    const exampleHanzi = parts[3];
+                    
+                    if (hanzi && pinyin) {
+                        // LỌC: Chỉ chấp nhận từ có 2 âm tiết trở lên
+                        if (hanzi.length >= 2) { 
+                            const chars = hanzi.split('');
+                            const wordId = `lesson${lessonNumber}_word${index}`;
+                            
+                            newWordList.push({
+                                chars: chars, 
+                                length: chars.length, 
+                                pinyin: pinyin, 
+                                vn: vn, 
+                                example: exampleHanzi, 
+                                id: wordId 
+                            });
+                            // Không cần tạo timestamp giả định nữa
+                        } else {
+                            wordsFiltered++;
+                        }
+                    }
+                });
+                
+                WORD_LIST_RAW = newWordList;
+                WORD_LIST_WITH_IDS = newWordList;
+                
+                document.getElementById('total-words').textContent = WORD_LIST_RAW.length;
+                
+                window.restartGame(); 
+                
+                let successMessage = `Đã tải thành công ${WORD_LIST_RAW.length} từ vựng từ Bài ${lessonNumber}.`;
+                if (wordsFiltered > 0) {
+                     successMessage += ` (Đã lọc ${wordsFiltered} từ đơn âm tiết)`;
+                }
+                //messageArea.textContent = successMessage;
+                
+            } catch (error) {
+                console.error("Lỗi khi tải hoặc phân tích dữ liệu bài học:", error);
+                //messageArea.textContent = `Lỗi: Không thể tải Bài ${lessonNumber}. Vui lòng kiểm tra lại đường dẫn file.`;
+                WORD_LIST_RAW = [];
+                WORD_LIST_WITH_IDS = [];
+                document.getElementById('total-words').textContent = 0;
+            }
+        };
+
+        // --- CÁC HÀM HỖ TRỢ VÀ LOGIC GAME (Giữ nguyên) ---
+
+        const calculateAndShufflePool = () => {
+            let allChars = UNSOLVED_WORDS.flatMap(word => word.chars);
+            allChars.sort(() => 0.5 - Math.random());
+            AVAILABLE_CHAR_POOL = allChars;
+        };
+        
+        const fillNewGrid = () => {
+            if (UNSOLVED_WORDS.length === 0) {
+                showVictoryModal();
+                return;
+            }
+
+            gridState = [];
+            
+            const charsForGrid = AVAILABLE_CHAR_POOL.splice(0, TOTAL_CELLS); 
+            
+            for (let i = 0; i < TOTAL_CELLS; i++) {
+                const char = charsForGrid[i] || ''; 
+                gridState.push({ 
+                    char: char, 
+                    index: i, 
+                    id: Date.now() + i + Math.random(), 
+                    isEmpty: char === '' 
+                }); 
+            }
+            renderGrid();
+        };
+
+        window.restartGame = () => {
+            if (WORD_LIST_WITH_IDS.length === 0) {
+                 messageArea.textContent = 'Vui lòng chọn một bài học có dữ liệu.';
+                 return;
+            }
+
+            isProcessing = false; 
+            currentScore = 0;
+            totalWordsMatched = 0;
+            UNSOLVED_WORDS = [...WORD_LIST_WITH_IDS]; 
+            selectedTiles = [];
+            comboCount = 0;
+            hintCount = 30;
+            
+            calculateAndShufflePool(); 
+
+            scoreElement.textContent = currentScore;
+            matchedCountElement.textContent = totalWordsMatched;
+            totalWordsElement.textContent = WORD_LIST_WITH_IDS.length;
+            selectionDisplay.textContent = '';
+            hintCountElement.textContent = hintCount;
+            hintBtn.disabled = false;
+            
+            gameoverTitleElement.textContent = 'HẾT GAME!';
+            
+            fillNewGrid();
+            
+            setTimeout(() => checkStuck(), 500); 
+        };
+
+        const getTileColor = (char) => {
+            let charIsActive = UNSOLVED_WORDS.some(word => word.chars.includes(char));
+            const isDarkMode = isDarkModeEnabled(); 
+            if (charIsActive) {
+                return isDarkMode ? DARK_TILE_COLOR : LIGHT_TILE_COLOR; 
+            }
+            return EMPTY_TILE_COLOR; 
+        };
+
+        const renderGrid = () => {
+            gridElement.innerHTML = '';
+            
+            gridState.forEach((tile, index) => {
+                const isSelected = selectedTiles.includes(index);
+                const tileDiv = document.createElement('div');
+                
+                const isTileEmpty = tile.isEmpty || !tile.char;
+                const colorScheme = isTileEmpty ? EMPTY_TILE_COLOR : getTileColor(tile.char);
+                const tileBgColor = colorScheme.bg;
+                const tileTextColor = colorScheme.text;
+                
+                tileDiv.className = `hanzi-tile rounded-xl 
+                    ${isTileEmpty ? 'opacity-0 cursor-default pointer-events-none' : (isSelected ? 'selected' : '')}`;
+                
+                tileDiv.dataset.index = index;
+                tileDiv.dataset.id = tile.id;
+                tileDiv.onclick = isTileEmpty ? null : () => handleTileClick(index);
+
+                tileDiv.style.backgroundColor = isSelected ? '' : tileBgColor;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'hanzi-content';
+                contentDiv.textContent = tile.char;
+                
+                contentDiv.style.color = isSelected ? '#ffffff' : tileTextColor;
+
+                tileDiv.appendChild(contentDiv);
+                gridElement.appendChild(tileDiv);
+            });
+            matchedCountElement.textContent = totalWordsMatched;
+        };
+
+        const updateSelectionDisplay = () => {
+            const currentWord = selectedTiles.map(index => gridState[index].char).join('');
+            selectionDisplay.textContent = currentWord;
+        };
+
+        const updateScoreUI = () => {
+            scoreElement.textContent = currentScore;
+        };
+
+        const handleTileClick = (index) => {
+            if (isProcessing) return;
+            
+            const tileDiv = gridElement.querySelector(`[data-index="${index}"]`);
+            if (tileDiv) {
+                tileDiv.classList.remove('animate-pulse', 'hint-pulse');
+                tileDiv.style.backgroundColor = getTileColor(gridState[index].char).bg;
+            }
+
+            const tile = gridState[index];
+            if (tile.isEmpty || !tile.char) return;
+
+            if (selectedTiles.includes(index)) {
+                selectedTiles = selectedTiles.filter(i => i !== index);
+            } else {
+                if (selectedTiles.length < 10) {
+                    selectedTiles.push(index);
+                } else {
+                    selectedTiles = [index];
+                }
+            }
+
+            updateSelectionDisplay();
+            renderGrid();
+            
+            if (selectedTiles.length >= 2) {
+                checkMatch();
+            }
+        };
+
+        const checkMatch = () => {
+            if (isProcessing) return;
+            
+            const currentWordChars = selectedTiles.map(index => gridState[index].char);
+            const currentWord = currentWordChars.join('');
+            
+            const matchedWord = WORD_LIST_WITH_IDS.find(word => word.chars.join('') === currentWord);
+            
+            const isWordUnsolved = matchedWord && UNSOLVED_WORDS.some(w => w.id === matchedWord.id);
+
+            if (isWordUnsolved) {
+                handleMatchCorrect(matchedWord);
+            } else if (selectedTiles.length === 10) {
+                handleMatchWrong();
+            }
+        };
+        
+        const handleMatchCorrect = (matchedWord) => {
+            isProcessing = true;
+            totalWordsMatched++;
+            comboCount++;
+            
+            UNSOLVED_WORDS = UNSOLVED_WORDS.filter(w => w.id !== matchedWord.id);
+            
+            selectedTiles.forEach(index => {
+                const tile = gridElement.querySelector(`[data-index="${index}"]`);
+                if (tile) {
+                    tile.classList.remove('selected', 'animate-pulse', 'hint-pulse');
+                    tile.classList.add('correct');
+                    tile.style.backgroundColor = ''; 
+                }
+            });
+
+            const basePoints = matchedWord.length === 2 ? 10 : (matchedWord.length === 3 ? 20 : 40);
+            const multiplier = 1 + (comboCount - 1) * 0.5;
+            const pointsGained = Math.round(basePoints * multiplier);
+            
+            animateFlyingScore(pointsGained, comboCount);
+
+            currentScore += pointsGained;
+
+            messageArea.textContent = `+${pointsGained} Điểm! Combo x${comboCount}! `;
+            updateScoreUI();
+            
+            if (currentScore > bestScore) {
+                bestScore = currentScore;
+                bestScoreElement.textContent = bestScore;
+                if (window.saveBestScore) window.saveBestScore(currentScore);
+            }
+            
+            showDictionaryModal(matchedWord);
+
+            selectedTiles = [];
+            selectionDisplay.textContent = '';
+            
+            if (UNSOLVED_WORDS.length === 0) {
+                setTimeout(() => showVictoryModal(), 500);
+                return;
+            }
+            
+            calculateAndShufflePool(); 
+            
+            setTimeout(() => {
+                gridElement.querySelectorAll('.hanzi-tile').forEach(tile => {
+                     tile.classList.remove('correct');
+                });
+                
+                fillNewGrid(); 
+                isProcessing = false;
+                checkStuck(); 
+            }, 500);
+        };
+
+        const handleMatchWrong = () => {
+            isProcessing = true;
+            comboCount = 0;
+            messageArea.textContent = 'Ghép sai! Combo bị reset.';
+            
+            selectedTiles.forEach(index => {
+                const tile = gridElement.querySelector(`[data-index="${index}"]`);
+                if (tile) {
+                    tile.classList.remove('selected', 'animate-pulse', 'hint-pulse'); 
+                    tile.classList.add('wrong');
+                }
+            });
+
+            setTimeout(() => {
+                selectedTiles.forEach(index => {
+                    const tile = gridElement.querySelector(`[data-index="${index}"]`);
+                    if (tile) {
+                        tile.classList.remove('wrong');
+                    }
+                });
+                selectedTiles = [];
+                selectionDisplay.textContent = '';
+                isProcessing = false;
+                
+                renderGrid(); 
+                checkStuck(); 
+            }, 600);
+        };
+        
+        const findHint = () => {
+            const currentTiles = gridState.filter(t => t.char && t.char !== '' && !t.isEmpty);
+            const currentChars = currentTiles.map(t => t.char);
+            
+            if (currentChars.length < 2) return null;
+
+            for (const word of UNSOLVED_WORDS) {
+                let tempChars = [...currentChars];
+                let isPossible = true;
+                
+                for (const char of word.chars) {
+                    const charIndex = tempChars.indexOf(char);
+                    if (charIndex > -1) {
+                        tempChars.splice(charIndex, 1);
+                    } else {
+                        isPossible = false;
+                        break;
+                    }
+                }
+
+                if (isPossible) {
+                    return word;
+                }
+            }
+            return null;
+        };
+        
+        const handleHint = () => {
+            if (hintCount <= 0 || isProcessing) return;
+
+            const hint = findHint();
+            
+            const isDarkMode = isDarkModeEnabled();
+            const hintClass = 'hint-pulse'; 
+            
+            const hintBg = isDarkMode ? DARK_TILE_COLOR.bg : LIGHT_MODE_HINT_COLOR;
+            const hintText = isDarkMode ? DARK_TILE_COLOR.text : LIGHT_MODE_HINT_TEXT_COLOR;
+
+            if (hint) {
+                hintCount--;
+                hintCountElement.textContent = hintCount;
+                if (hintCount === 0) hintBtn.disabled = true;
+
+                let tempGridState = [...gridState];
+                let hintIndexes = [];
+
+                hint.chars.forEach(char => {
+                    const index = tempGridState.findIndex(tile => tile.char === char && !tile.isEmpty);
+                    if (index > -1) {
+                        hintIndexes.push(index);
+                        tempGridState[index] = { char: null, index, isEmpty: true }; 
+                    }
+                });
+                
+                selectedTiles = [];
+                selectionDisplay.textContent = '';
+                renderGrid(); 
+
+                hintIndexes.forEach(index => {
+                    const tile = gridElement.querySelector(`[data-index="${index}"]`);
+                    if (tile) {
+                        const content = tile.querySelector('.hanzi-content');
+                        
+                        tile.style.backgroundColor = hintBg;
+                        content.style.color = hintText;
+
+                        tile.classList.add('animate-pulse', hintClass);
+                        
+                        setTimeout(() => {
+                            tile.classList.remove('animate-pulse', hintClass);
+                            const originalColor = getTileColor(gridState[index].char);
+                            tile.style.backgroundColor = originalColor.bg;
+                            content.style.color = originalColor.text;
+
+                        }, 1500);
+                    }
+                });
+
+                messageArea.textContent = `Gợi ý: Hãy ghép ${hint.chars.join(' + ')}!`;
+            } else {
+                messageArea.textContent = 'Không tìm thấy từ nào khả thi lúc này.';
+            }
+        };
+
+        const showDictionaryModal = (word) => {
+            const modal = document.getElementById('dictionary-modal');
+            const hanziText = word.chars.join('');
+            
+            document.getElementById('modal-hanzi').textContent = hanziText;
+            document.getElementById('modal-pinyin').textContent = word.pinyin;
+            document.getElementById('modal-vn').textContent = word.vn;
+            document.getElementById('modal-example-text').textContent = word.example;
+            
+            currentHanziToSpeak = hanziText;
+            speakerBtn.disabled = false;
+            speakerBtn.textContent = '🔊'; 
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+            }, 10);
+            
+            // SỬ DỤNG HÀM PHÁT ÂM ƯU TIÊN MP3 TỪ FILE RIÊNG LẺ
+            playAudioFromLesson(currentLesson, currentHanziToSpeak);
+
+            setTimeout(() => {
+                window.speechSynthesis.cancel(); 
+                audioPlayer.pause(); 
+                modal.classList.add('hidden');
+                modal.querySelector('div').classList.remove('scale-100');
+                modal.querySelector('div').classList.add('scale-95');
+                speakerBtn.textContent = '🔊';
+                speakerBtn.disabled = false;
+            }, 2000); 
+        };
+        
+        const handleStuckGrid = () => {
+            isProcessing = true;
+            messageArea.textContent = 'Lưới bị kẹt! Đang thu hồi và đổ lại 16 chữ Hán mới...';
+            
+            const stuckChars = gridState.filter(t => !t.isEmpty).map(t => t.char);
+            AVAILABLE_CHAR_POOL.push(...stuckChars); 
+            
+            AVAILABLE_CHAR_POOL.sort(() => 0.5 - Math.random());
+
+            fillNewGrid(); 
+
+            setTimeout(() => {
+                messageArea.textContent = 'Đã đổ lại lưới mới.';
+                isProcessing = false;
+                
+                checkStuck(); 
+            }, 500);
+        };
+        
+        const showVictoryModal = () => {
+            const modal = document.getElementById('gameover-modal');
+            gameoverTitleElement.textContent = 'CHIẾN THẮNG TUYỆT VỜI! 🏆';
+            gameoverTitleElement.classList.remove('text-red-600');
+            gameoverTitleElement.classList.add('text-green-600');
+
+            document.getElementById('final-score').textContent = currentScore;
+            
+            let updateMessage = `Bạn đã hoàn thành TẤT CẢ ${WORD_LIST_WITH_IDS.length} từ trong danh sách!`;
+            if (currentScore > bestScore) {
+                updateMessage += ' Bạn đã lập kỷ lục điểm cao mới!';
+            }
+            document.getElementById('best-score-update').textContent = updateMessage;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            isProcessing = true; 
+
+            triggerConfetti();
+        };
+        
+        const checkStuck = () => {
+             if (isProcessing || UNSOLVED_WORDS.length === 0) return;
+
+             const hasPossibleMoves = findHint() !== null; 
+
+             if (!hasPossibleMoves) {
+                handleStuckGrid();
+             }
+        };
+
+        const triggerConfetti = () => {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            const defaults = {
+                spread: 360,
+                ticks: 50,
+                gravity: 0.5,
+                decay: 0.94,
+                startVelocity: 30,
+                colors: ['#00FF00', '#FFFF00', '#FF00FF', '#00FFFF', '#FF6600']
+            };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(250 * particleRatio)
+                }));
+            }
+
+            fire(0.25, {
+                spread: 26,
+                startVelocity: 55,
+            });
+            fire(0.2, {
+                spread: 60,
+            });
+            fire(0.35, {
+                spread: 100,
+                decay: 0.91,
+                scalar: 0.8
+            });
+            fire(0.1, {
+                spread: 120,
+                startVelocity: 25,
+                decay: 0.92,
+                scalar: 1.2
+            });
+            fire(0.1, {
+                spread: 120,
+                startVelocity: 45,
+            });
+        };
+
+        const animateFlyingScore = (pointsGained, comboCount) => {
+            const scoreElementRect = scoreElement.getBoundingClientRect();
+            const scoreTargetX = scoreElementRect.right - 10; 
+            const scoreTargetY = scoreElementRect.top + scoreElementRect.height / 2;
+            if (selectedTiles.length === 0) return;
+            const sourceIndex = selectedTiles[0];
+            const sourceTile = gridElement.querySelector(`[data-index="${sourceIndex}"]`);
+            if (!sourceTile) return;
+            const sourceRect = sourceTile.getBoundingClientRect();
+            const sourceCenterX = sourceRect.left + sourceRect.width / 2;
+            const sourceCenterY = sourceRect.top + sourceRect.height / 2;
+            const flyEl = document.createElement('div');
+            const comboText = comboCount > 1 ? ` (x${comboCount})` : '';
+            flyEl.textContent = `+${pointsGained}${comboText}`;
+            flyEl.className = 'flying-score';
+            flyEl.style.left = `${sourceCenterX}px`;
+            flyEl.style.top = `${sourceCenterY}px`;
+            document.body.appendChild(flyEl);
+            setTimeout(() => {
+                const dx = scoreTargetX - sourceCenterX;
+                const dy = scoreTargetY - sourceCenterY;
+                flyEl.style.transform = `translate(${dx}px, ${dy}px) scale(0.5)`;
+                flyEl.style.opacity = '0';
+            }, 10);
+            setTimeout(() => {
+                flyEl.remove();
+            }, 800); 
+        };
+
+        const isDarkModeEnabled = () => {
+            return document.documentElement.classList.contains('dark');
+        };
+
+        const applyDarkMode = (isDark) => {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('game-container').classList.remove('bg-white', 'shadow-2xl');
+                document.getElementById('game-container').classList.add('bg-gray-800', 'shadow-xl');
+                darkModeIcon.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('game-container').classList.add('bg-white', 'shadow-2xl');
+                document.getElementById('game-container').classList.remove('bg-gray-800', 'shadow-xl');
+                darkModeIcon.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            }
+            renderGrid();
+        };
+        
+        const toggleDarkMode = () => {
+            applyDarkMode(!isDarkModeEnabled());
+        };
+
+        window.onload = function() {
+            document.getElementById('restart-btn').onclick = window.restartGame;
+            document.getElementById('hint-btn').onclick = handleHint; 
+            darkModeToggle.onclick = toggleDarkMode;
+            
+            // Đảm bảo nút loa gọi hàm xử lý MP3/TTS
+            speakerBtn.onclick = handleSpeakerClick; 
+            
+            lessonSelect.onchange = (event) => {
+                const selectedLesson = event.target.value;
+                loadAndParseLesson(selectedLesson);
+            };
+
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                applyDarkMode(true);
+            } else {
+                applyDarkMode(false);
+            }
+            
+            loadAndParseLesson(lessonSelect.value);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+你|nǐ|bạn|你好吗？|Nǐ hǎo ma?|Bạn khỏe không?
+我|wǒ|tôi|我是学生。|Wǒ shì xuéshēng.|Tôi là học sinh.
+您|nín|ông, bà, ngài (lịch sự)|您是老师吗？|Nín shì lǎoshī ma?|Ông là giáo viên phải không?
+老师|lǎoshī|giáo viên|我是老师。|Wǒ shì lǎoshī.|Tôi là giáo viên.
+学生|xuésheng|học sinh|他是学生。|Tā shì xuésheng.|Anh ấy là học sinh.
+好|hǎo|tốt, khỏe|她很好。|Tā hěn hǎo.|Cô ấy rất tốt.
+很|hěn|rất|你很漂亮。|Nǐ hěn piàoliang.|Bạn rất xinh đẹp.
+吗|ma|không? (trợ từ nghi vấn)|你是中国人吗？|Nǐ shì Zhōngguó rén ma?|Bạn là người Trung Quốc phải không?
+谢谢|xièxie|cảm ơn|谢谢你！|Xièxie nǐ!|Cảm ơn bạn!
+这|zhè|này|这是我的书。|Zhè shì wǒ de shū.|Đây là sách của tôi.
+那|nà|kia|那是什么？|Nà shì shénme?|Kia là cái gì?
+是|shì|là, phải|他是我哥哥。|Tā shì wǒ gēge.|Anh ấy là anh trai tôi.
+不|bù|không, không phải|我不是老师。|Wǒ bù shì lǎoshī.|Tôi không phải là giáo viên.
+本子|běnzi|quyển vở|我有一个本子。|Wǒ yǒu yīgè běnzi.|Tôi có một quyển vở.
+书|shū|sách|这本书很好看。|Zhè běn shū hěn hǎokàn.|Quyển sách này rất hay.
+你好|nǐ hǎo|xin chào|你好，很高兴认识你。|Nǐ hǎo, hěn gāoxìng rènshì nǐ.|Xin chào, rất vui được làm quen với bạn.
+再见|zàijiàn|tạm biệt|再见，明天见。|Zàijiàn, míngtiān jiàn.|Tạm biệt, ngày mai gặp lại.
+对不起|Duìbùqǐ|Xin lỗi|对不起, 我来晚了。|Wǒ lái wǎnle, duìbùqǐ.|xin lỗi, tôi đã đến muộn, .
+没关系|MéiguānxiKhông sao|没关系，你坐吧。Méiguānxi, nǐ zuò ba.|Không sao, bạn ngồi đi.
+陈楠|Chén Nán|Trần Nam (tên riêng)|我是陈楠。|Wǒ shì Chén Nán.|Tôi là Trần Nam.
+国安|Guó'ān|Quốc An (tên riêng)|他是国安。|Tā shì Guó'ān.|Anh ấy là Quốc An.
+他是学生|Tā shì xuésheng.|Anh ấy là học sinh.|他是学生。|Tā shì xuésheng.|Anh ấy là học sinh.
+她很好|Tā hěn hǎo.|Cô ấy rất tốt.|他是学生。|Tā shì xuésheng.|Anh ấy là học sinh.
+我是陈楠|Wǒ shì Chén Nán.|Tôi là Trần Nam.|我是陈楠|Wǒ shì Chén Nán.
+您是老师吗|Nín shì lǎoshī ma?|Ông là giáo viên phải không?|您是老师吗|Nín shì lǎoshī ma?|Ông là giáo viên phải không?
+你好吗|Nǐ hǎo ma?|Bạn khỏe không?|你好吗|Nǐ hǎo ma?|Bạn khỏe không?
+我不是老师|Wǒ bù shì lǎoshī.|Tôi không phải là giáo viên.|我不是老师|Wǒ bù shì lǎoshī.
