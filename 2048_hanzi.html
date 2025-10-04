@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 Cổ Điển</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Confetti Library for High Score celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Use Inter font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #faf8ef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            /* FIX 1: Ngăn chặn cuộn dọc (để tránh pull-to-refresh) */
+            overflow: hidden; 
+        }
+        /* FIX 2: Đảm bảo container nội dung có thể cuộn nếu cần, nhưng chỉ khi nội dung vượt quá chiều cao màn hình */
+        .container-wrapper {
+             overflow-y: auto;
+             -webkit-overflow-scrolling: touch;
+             height: 100vh;
+             width: 100%;
+             max-width: 600px;
+             padding: 20px 0; /* Padding dọc để nội dung không chạm mép */
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+        }
+
+        /* Custom Tailwind config for tile colors */
+        .tile-container {
+            position: relative;
+            background-color: #bbada0;
+            border-radius: 8px;
+            padding: 8px; /* For spacing between cells */
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 8px;
+            max-width: 600px; /* Max width for desktop */
+            width: 100%;
+            aspect-ratio: 1 / 1;
+        }
+        .cell {
+            background-color: rgba(238, 228, 218, 0.35);
+            border-radius: 6px;
+            aspect-ratio: 1 / 1;
+        }
+        .tile {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            color: #776e65;
+            border-radius: 6px;
+            
+            /* Áp dụng Transition cho transform để tạo hiệu ứng chuyển động mượt mà */
+            transition: transform 0.15s ease-in-out, background-color 0.15s ease-in-out;
+            
+            /* Cố định kích thước tile bằng cách tính toán lại */
+            width: calc((100% - 32px) / 4); 
+            height: calc((100% - 32px) / 4);
+            
+            /* Dùng top/left bằng 0 và dùng transform để định vị */
+            top: 0;
+            left: 0;
+            
+            /* Dùng CSS variable để đặt vị trí ban đầu cho animation */
+            transform: translate(var(--x), var(--y));
+        }
+        
+        /* Hiệu ứng Pop-in khi ô mới xuất hiện */
+        .tile-new {
+            animation: tile-pop 0.15s ease-in-out;
+            transform: translate(var(--x), var(--y)) scale(0);
+        }
+        @keyframes tile-pop {
+            0% { transform: translate(var(--x), var(--y)) scale(0.5); }
+            100% { transform: translate(var(--x), var(--y)) scale(1); }
+        }
+
+        /* Classes màu và kích thước chữ */
+        .tile-value-2 { background-color: #eee4da; font-size: 2.5rem; }
+        .tile-value-4 { background-color: #ede0c8; font-size: 2.5rem; }
+        .tile-value-8 { background-color: #f2b179; color: #f9f6f2; font-size: 2.5rem; }
+        .tile-value-16 { background-color: #f59563; color: #f9f6f2; font-size: 2.2rem; }
+        .tile-value-32 { background-color: #f67c5f; color: #f9f6f2; font-size: 2.2rem; }
+        .tile-value-64 { background-color: #f65e3b; color: #f9f6f2; font-size: 2rem; }
+        .tile-value-128 { background-color: #edcf72; color: #f9f6f2; font-size: 1.8rem; }
+        .tile-value-256 { background-color: #edcc61; color: #f9f6f2; font-size: 1.8rem; }
+        .tile-value-512 { background-color: #edc850; color: #f9f6f2; font-size: 1.6rem; }
+        .tile-value-1024 { background-color: #edc53f; color: #f9f6f2; font-size: 1.6rem; }
+        .tile-value-2048 { background-color: #edc22e; color: #f9f6f2; font-size: 1.4rem; }
+        .tile-value-super { background-color: #3c3a32; color: #f9f6f2; font-size: 1.4rem; }
+        
+        /* Adjust font size for smaller screens (Mobile) */
+        @media (max-width: 480px) {
+            .tile-value-2, .tile-value-4, .tile-value-8 { font-size: 2rem; }
+            .tile-value-16, .tile-value-32, .tile-value-64 { font-size: 1.6rem; }
+            .tile-value-128, .tile-value-256, .tile-value-512 { font-size: 1.4rem; }
+            .tile-value-1024, .tile-value-2048, .tile-value-super { font-size: 1.2rem; }
+        }
+        
+        /* Điều chỉnh kích thước font cho Chữ Hán */
+        .tile.han-mode {
+             /* Giảm kích thước font cho các ký tự Hán tự để dễ đọc hơn */
+            font-size: 2.5rem;
+            line-height: 1; /* Căn chỉnh chiều cao dòng */
+        }
+        @media (max-width: 480px) {
+             .tile.han-mode {
+                font-size: 2rem;
+            }
+        }
+
+        /* Game State Overlay */
+        .game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(250, 248, 239, 0.7);
+            border-radius: 8px;
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+
+        /* Control Button Style - Cập nhật kích thước nhỏ hơn cho mobile */
+        .control-btn {
+            background-color: #8f7a66;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 0.5rem;
+            border-radius: 6px; /* Nhỏ hơn so với 8px */
+            box-shadow: 0 3px #776e65; /* Nhỏ hơn so với 4px */
+            transition: all 0.1s;
+            width: 50px; /* Giảm kích thước */
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .control-btn:hover {
+            background-color: #9f8a75;
+        }
+        .control-btn:active {
+            box-shadow: 0 1px #776e65; /* Nhỏ hơn so với 2px */
+            transform: translateY(2px);
+        }
+        
+        /* Grid layout for D-pad (CẤU HÌNH MỚI) */
+        .dpad-grid {
+            display: grid;
+            /* Định nghĩa bố cục 3x3 nhưng chỉ sử dụng các vị trí 
+               để tạo ra hình chữ T ngược:
+               .  Up  .
+               Lef Down Righ
+            */
+            grid-template-areas: 
+                ". up ."
+                "left down right";
+            gap: 10px;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr; /* Chỉ cần 2 hàng cho bố cục mới */
+            width: 170px; /* Giảm chiều rộng tổng thể */
+            height: 120px; /* Giảm chiều cao tổng thể */
+            align-items: center;
+        }
+        .dpad-up { grid-area: up; justify-self: center; }
+        .dpad-left { grid-area: left; justify-self: end; }
+        .dpad-right { grid-area: right; justify-self: start; }
+        .dpad-down { grid-area: down; justify-self: center; }
+
+        /* Điều chỉnh cho mobile để bố cục nút không quá lớn */
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            .dpad-grid {
+                width: 150px; 
+                height: 100px;
+                gap: 8px;
+            }
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Bao bọc nội dung bằng một div để kiểm soát việc cuộn -->
+    <div class="container-wrapper">
+        <div class="container w-full max-w-xl mx-auto p-4">
+            <!-- Header -->
+            <header class="mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h1 class="text-6xl font-black text-[#776e65]">2048</h1>
+                    <!-- Game Mode Selector -->
+                    <div>
+                        <label for="game-mode" class="text-xs font-semibold uppercase text-[#776e65] block mb-1 text-right">Kiểu chơi</label>
+                        <select id="game-mode" class="bg-white border border-[#bbada0] text-[#776e65] rounded-lg p-1.5 shadow-md text-sm cursor-pointer focus:ring-2 focus:ring-[#8f7a66] transition">
+                            <option value="classic">Cổ điển (Số)</option>
+                            <option value="han">Chữ Hán</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <!-- Score Board -->
+                    <div class="bg-[#bbada0] text-white p-2 rounded-lg text-center min-w-[80px]">
+                        <div class="text-xs font-semibold uppercase opacity-80">Điểm số</div>
+                        <div id="score" class="text-xl font-bold">0</div>
+                    </div>
+                    <!-- High Score Board -->
+                    <div class="bg-[#bbada0] text-white p-2 rounded-lg text-center min-w-[80px]">
+                        <div class="text-xs font-semibold uppercase opacity-80">🏆</div>
+                        <div id="high-score" class="text-xl font-bold">0</div>
+                    </div>
+                    <!-- New Game Button -->
+                    <button id="new-game-btn" class="bg-[#8f7a66] hover:bg-[#9f8a75] text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all">
+                        New game
+                    </button>
+                </div>
+            </header>
+
+            <!-- Instructions -->
+            <p class="text-center text-[#776e65] mb-4 text-sm md:text-base">
+                Sử dụng phím mũi tên hoặc lướt (swipe) trên màn hình để di chuyển các ô.
+            </p>
+
+            <!-- Game Board Container -->
+            <div id="game-container" class="tile-container relative">
+                <!-- Grid Cells (Background) -->
+                <div class="grid grid-cols-4 gap-2 absolute inset-0 p-2">
+                    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                </div>
+                <!-- Tiles will be appended here -->
+
+                <!-- Game Over/Win Overlay -->
+                <div id="game-overlay" class="game-overlay hidden">
+                    <p id="overlay-message" class="text-4xl font-black text-[#776e65] mb-4"></p>
+                    <button id="try-again-btn" class="bg-[#8f7a66] hover:bg-[#9f8a75] text-white font-bold py-3 px-6 rounded-lg shadow-xl text-lg transition-all">
+                        Thử lại
+                    </button>
+                </div>
+            </div>
+            
+            <!-- --- Control Buttons (D-Pad) --- -->
+            <!-- Thêm class 'hidden' để ẩn bộ điều khiển D-pad -->
+            <div class="flex justify-center mt-8 hidden"> 
+                <div class="dpad-grid">
+                    <button id="btn-up" class="control-btn dpad-up">▲</button>
+                    <button id="btn-left" class="control-btn dpad-left">◀</button>
+                    <button id="btn-down" class="control-btn dpad-down">▼</button>
+                    <button id="btn-right" class="control-btn dpad-right">▶</button>
+                </div>
+            </div>
+            <!-- --- End Control Buttons --- -->
+            
+        </div>
+    </div>
+    <!-- FIX 3: Ngăn chặn hành vi cuộn mặc định của tài liệu (chỉ hoạt động với một số trình duyệt) -->
+    <script>
+        document.addEventListener('touchmove', (e) => {
+            // Ngăn chặn cuộn nếu sự kiện touch xảy ra trên bất kỳ đâu trong body
+            // Ngoại trừ các phần tử có thể cuộn (nếu có, nhưng ở đây không cần)
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+    
+    <script>
+        // --- Tailwind CSS Configuration for colors (must be before first tile is drawn) ---
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'tile-bg-0': '#cdc1b4',
+                        'tile-bg-2': '#eee4da',
+                        'tile-bg-4': '#ede0c8',
+                        'tile-bg-8': '#f2b179',
+                        'tile-bg-16': '#f59563',
+                        'tile-bg-32': '#f67c5f',
+                        'tile-bg-64': '#f65e3b',
+                        'tile-bg-128': '#edcf72',
+                        'tile-bg-256': '#edcc61',
+                        'tile-bg-512': '#edc850',
+                        'tile-bg-1024': '#edc53f',
+                        'tile-bg-2048': '#edc22e',
+                    },
+                    boxShadow: {
+                        'tile': '0 0 10px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script>
+        const GRID_SIZE = 4;
+        const TILE_GAP_PX = 8;
+        const CONTAINER_PADDING_PX = 8;
+        const ANIMATION_DURATION = 150; // ms
+        const HIGH_SCORE_KEY = '2048_high_score'; // Key for localStorage
+        
+        // Ánh xạ các giá trị số sang ký tự Hán tự
+        const HANZI_MAP = {
+            2: '你',    // Nǐ - You
+            4: '我',    // Wǒ - I/Me
+            8: '您',    // Tā - He/Him
+            16: '好',   // Hǎo - Good
+            32: '学',   // Xué - Study/Learn
+            64: '生',   // Shēng - Student/Life
+            128: '老',  // Dà - Big/Large
+            256: '师',  // Jiā - Family/Home
+            512: '再',  // De - Possessive/Adjectival Particle
+            1024: '见', // Péng - Friend (first part of Pèngyou - Friend)
+            2048: '', // Yǒu - Friend (second part of Pèngyou - Friend)
+            // Tiếp tục cho các cấp độ cao hơn
+            4096: '这',  // Xǐ - Happy/Like
+            8192: '那', // Huān - Happy/Joyful
+            16384: '国', // Zhōng - Middle/China
+            32768: '安', // Wén - Language/Culture
+            65536: '爱'  // Ài - Love
+        };
+        
+        let board; // Lưu trữ các đối tượng { value, id } hoặc null
+        let score = 0;
+        let highScore = 0; // Thêm biến điểm cao nhất
+        let isGameOver = false;
+        let hasWon = false;
+        let TILE_SIZE_PX = 0; // Kích thước pixel thực tế của một ô
+        let tileIdCounter = 0; // Bộ đếm ID duy nhất cho mỗi ô
+        let gameMode = 'classic'; // Kiểu chơi hiện tại
+
+        const gameContainer = document.getElementById('game-container');
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('high-score'); // Element mới
+        const overlay = document.getElementById('game-overlay');
+        const overlayMessage = document.getElementById('overlay-message');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const tryAgainBtn = document.getElementById('try-again-btn');
+        const gameModeSelector = document.getElementById('game-mode'); // Element mới
+        
+        // --- Nút điều khiển mới ---
+        const btnUp = document.getElementById('btn-up');
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        const btnDown = document.getElementById('btn-down');
+
+        // Hàm tải điểm cao nhất từ localStorage
+        function loadHighScore() {
+            try {
+                const storedScore = localStorage.getItem(HIGH_SCORE_KEY);
+                highScore = parseInt(storedScore) || 0;
+            } catch (e) {
+                console.error("Không thể tải điểm cao nhất từ localStorage:", e);
+                highScore = 0;
+            }
+            updateHighScoreDisplay();
+        }
+
+        // Hàm cập nhật hiển thị điểm cao nhất (FIX: Đưa lên đây để đảm bảo phạm vi truy cập)
+        function updateHighScoreDisplay() {
+            highScoreElement.textContent = highScore;
+        }
+
+        // Hàm kiểm tra và cập nhật điểm cao nhất - DỪNG GỌI HÀM NÀY SAU MỖI BƯỚC ĐI.
+        // Nó sẽ được gọi MỘT LẦN trong checkGameState() khi game over.
+        function checkAndUpdateHighScoreOnGameOver() {
+            if (score > highScore) {
+                // Đây là kỷ lục mới
+                highScore = score;
+                updateHighScoreDisplay();
+                
+                // Kích hoạt pháo giấy và thông báo chúc mừng
+                launchConfetti();
+                showOverlay("Kỷ lục mới: " + score + "!", "win"); // Dùng "win" để có màu vàng
+                
+                // Lưu vào localStorage
+                try {
+                    localStorage.setItem(HIGH_SCORE_KEY, highScore.toString());
+                } catch (e) {
+                    console.error("Không thể lưu điểm cao nhất vào localStorage:", e);
+                }
+                return true; // Đã đạt kỷ lục mới
+            }
+            return false; // Không đạt kỷ lục mới
+        }
+        
+        // Hàm bắn pháo giấy chúc mừng
+        function launchConfetti() {
+            const duration = 5 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+                // since particles fall down, start a bit higher than random
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+
+        // Hàm tạo đối tượng ô mới
+        function createTile(value) {
+            return { value, id: `t${tileIdCounter++}` };
+        }
+
+        // Initial setup function
+        function setupGame() {
+            board = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
+            score = 0;
+            isGameOver = false;
+            hasWon = false;
+            overlay.classList.add('hidden');
+            gameContainer.innerHTML = ''; // Clear existing tiles and overlay
+            
+            // Re-add the background cells and overlay structure
+            addBackgroundCells();
+            gameContainer.appendChild(overlay);
+
+            updateScore(); // Cập nhật hiển thị điểm hiện tại (là 0)
+            updateHighScoreDisplay(); // FIX: Gọi hàm cập nhật hiển thị điểm cao nhất
+            
+            addRandomTile();
+            addRandomTile();
+            updateTiles(); // Dùng updateTiles thay cho drawBoard
+        }
+
+        function addBackgroundCells() {
+             const bgDiv = document.createElement('div');
+             bgDiv.className = 'grid grid-cols-4 gap-2 absolute inset-0 p-2';
+             for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+                 const cell = document.createElement('div');
+                 cell.className = 'cell';
+                 bgDiv.appendChild(cell);
+             }
+             gameContainer.appendChild(bgDiv);
+             
+             // Cập nhật TILE_SIZE_PX dựa trên kích thước thực tế của một ô nền
+             const firstCell = gameContainer.querySelector('.cell');
+             if (firstCell) {
+                 TILE_SIZE_PX = firstCell.offsetWidth;
+             }
+        }
+
+        // Updates the score display
+        function updateScore() {
+            scoreElement.textContent = score;
+            // Xóa checkAndUpdateHighScore() ở đây
+        }
+
+        // Finds all empty cells (là null)
+        function getEmptyCells() {
+            let cells = [];
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (board[r][c] === null) {
+                        cells.push({ r, c });
+                    }
+                }
+            }
+            return cells;
+        }
+
+        // Adds a new 2 or 4 tile to a random empty cell
+        function addRandomTile() {
+            const emptyCells = getEmptyCells();
+            if (emptyCells.length === 0) return;
+
+            const { r, c } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            const value = Math.random() < 0.9 ? 2 : 4;
+            board[r][c] = createTile(value); // Dùng hàm tạo tile
+        }
+        
+        // Hàm chuyển đổi giá trị số sang chuỗi hiển thị
+        function getTileContent(value) {
+            if (gameMode === 'han' && HANZI_MAP.hasOwnProperty(value)) {
+                return HANZI_MAP[value];
+            }
+            return value.toString();
+        }
+
+        /**
+         * Chuyển đổi tọa độ hàng/cột (r, c) thành giá trị pixel cho CSS Transform.
+         */
+        function getPosition(r, c) {
+            // Vị trí X (cột): c * (Kích thước ô + Khoảng cách) + Padding của container
+            const x = c * (TILE_SIZE_PX + TILE_GAP_PX) + CONTAINER_PADDING_PX;
+            const y = r * (TILE_SIZE_PX + TILE_GAP_PX) + CONTAINER_PADDING_PX;
+            
+            return { x: `${x}px`, y: `${y}px` };
+        }
+
+        /**
+         * Cập nhật các ô trên màn hình (thay thế drawBoard)
+         * Hàm này áp dụng animation cho các ô di chuyển và ô mới.
+         */
+        function updateTiles() {
+            // Lấy các ô hiện có trong DOM theo ID
+            const existingTiles = new Map();
+            gameContainer.querySelectorAll('.tile').forEach(tile => {
+                existingTiles.set(tile.id, tile);
+            });
+
+            // Recalculate TILE_SIZE_PX (đảm bảo responsive)
+            const firstCell = gameContainer.querySelector('.cell');
+            if (firstCell) {
+                 TILE_SIZE_PX = firstCell.offsetWidth;
+            }
+            
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const tileData = board[r][c];
+                    const { x, y } = getPosition(r, c);
+                    
+                    if (tileData) {
+                        let tileElement = existingTiles.get(tileData.id);
+                        const displayContent = getTileContent(tileData.value);
+                        
+                        // Xác định class cho chế độ chơi
+                        const modeClass = gameMode === 'han' ? 'han-mode' : '';
+
+                        if (tileElement) {
+                            // Ô đã tồn tại: Áp dụng vị trí mới (CSS Transition sẽ tự động tạo chuyển động)
+                            
+                            // Cập nhật giá trị transform
+                            tileElement.style.transform = `translate(${x}, ${y})`;
+                            
+                            // Cập nhật giá trị hiển thị và màu sắc (trong trường hợp ô đã được merge)
+                            const classNameValue = tileData.value > 65536 ? 'super' : tileData.value;
+                            tileElement.className = `tile tile-value-${classNameValue} shadow-tile ${modeClass}`;
+                            tileElement.textContent = displayContent;
+
+                            // Xóa khỏi map để theo dõi các ô bị xóa
+                            existingTiles.delete(tileData.id);
+
+                        } else {
+                            // Ô mới (vừa được sinh ra hoặc là kết quả của một merge)
+                            const tile = document.createElement('div');
+                            tile.id = tileData.id;
+                            const classNameValue = tileData.value > 65536 ? 'super' : tileData.value;
+                            
+                            // Áp dụng class 'tile-new' cho hiệu ứng pop-in
+                            tile.className = `tile tile-value-${classNameValue} shadow-tile tile-new ${modeClass}`;
+                            tile.textContent = displayContent;
+                            
+                            // Đặt biến CSS cho vị trí transform và animation
+                            tile.style.setProperty('--x', x);
+                            tile.style.setProperty('--y', y);
+                            
+                            gameContainer.appendChild(tile);
+                            
+                            // FIX: Xóa class 'tile-new' sau khi animation hoàn tất
+                            setTimeout(() => {
+                                // Đảm bảo ô vẫn tồn tại trước khi thao tác
+                                if (tile.parentElement) {
+                                    tile.classList.remove('tile-new');
+                                    // Áp dụng lại transform cuối cùng (scale 1)
+                                    tile.style.transform = `translate(${x}, ${y})`;
+                                }
+                            }, ANIMATION_DURATION);
+                        }
+                    }
+                }
+            }
+            
+            // Loại bỏ các ô không còn trên bảng (đã bị merge hoặc bị đẩy ra)
+            existingTiles.forEach(tile => {
+                // Thêm một độ trễ nhỏ để ô merge/biến mất không quá đột ngột
+                setTimeout(() => tile.remove(), ANIMATION_DURATION);
+            });
+        }
+
+
+        // Core logic: Rotates the board to reuse the 'slide left' logic for all directions
+        function rotateBoard(matrix) {
+            const N = matrix.length;
+            const newMatrix = Array.from({ length: N }, () => Array(N).fill(null)); // Dùng null
+            for (let r = 0; r < N; r++) {
+                for (let c = 0; c < N; c++) {
+                    // Rotate 90 degrees clockwise
+                    newMatrix[c][N - 1 - r] = matrix[r][c];
+                }
+            }
+            return newMatrix;
+        }
+
+        // The core move function for sliding and merging tiles to the left
+        function slideAndMergeLeft(row) {
+            // Lọc ra các ô có giá trị (không phải null)
+            let tiles = row.filter(val => val !== null);
+            let newCells = [];
+            let scoreIncrease = 0;
+
+            for (let i = 0; i < tiles.length; i++) {
+                let currentTile = tiles[i];
+
+                if (i < tiles.length - 1 && currentTile.value === tiles[i + 1].value) {
+                    // MERGE: currentTile doubles value, next tile is removed/destroyed
+                    currentTile.value *= 2;
+                    scoreIncrease += currentTile.value;
+                    
+                    // Push một bản sao của ô đã được merge (cần ID và Value)
+                    // NOTE: Giữ nguyên ID của ô đầu tiên để transition hoạt động
+                    newCells.push({ ...currentTile }); 
+                    i++; // Bỏ qua ô đã được merge vào
+                    
+                    if (!hasWon && currentTile.value === 2048) {
+                        hasWon = true;
+                    }
+                } else {
+                    // NO MERGE
+                    newCells.push(currentTile);
+                }
+            }
+
+            // Kiểm tra xem có chuyển động/thay đổi nào xảy ra không
+            const oldValues = row.map(t => t ? t.value : 0).join('');
+            const newValues = newCells.map(t => t ? t.value : 0).join('');
+            // Kiểm tra cả số lượng ô đã được nén/di chuyển
+            let moved = oldValues !== newValues || row.filter(t => t !== null).length !== newCells.length;
+
+            // Đệm bằng null
+            while (newCells.length < GRID_SIZE) {
+                newCells.push(null);
+            }
+            
+            return { newRow: newCells, scoreIncrease, moved };
+        }
+
+        // Main move handler
+        function move(direction) {
+            if (isGameOver || hasWon) return;
+
+            let originalBoard = JSON.stringify(board);
+            let hasMoved = false;
+
+            // 0: Left, 1: Down, 2: Right, 3: Up (Đã sửa lỗi hướng di chuyển)
+            let rotations;
+            if (direction === 'left') rotations = 0;
+            else if (direction === 'down') rotations = 1; // 90 độ clockwise: Down -> Left
+            else if (direction === 'right') rotations = 2;
+            else if (direction === 'up') rotations = 3;   // 270 độ clockwise: Up -> Left
+
+            // 1. Áp dụng rotations để đưa hướng di chuyển về 'Left'
+            for (let i = 0; i < rotations; i++) {
+                board = rotateBoard(board);
+            }
+
+            // 2. Thực hiện slide-and-merge
+            for (let r = 0; r < GRID_SIZE; r++) {
+                const { newRow, scoreIncrease, moved } = slideAndMergeLeft(board[r]);
+                board[r] = newRow;
+                score += scoreIncrease;
+                if (moved) hasMoved = true;
+            }
+
+            // 3. Quay ngược rotations để khôi phục bảng về hướng ban đầu
+            for (let i = 0; i < (GRID_SIZE - rotations) % GRID_SIZE; i++) {
+                board = rotateBoard(board);
+            }
+
+            // 4. Cập nhật trạng thái
+            if (hasMoved) {
+                // Áp dụng chuyển động ngay lập tức
+                updateTiles(); 
+                
+                // Thêm ô ngẫu nhiên và kiểm tra trạng thái sau khi chuyển động kết thúc
+                setTimeout(() => {
+                    addRandomTile();
+                    updateScore(); 
+                    updateTiles(); // Cập nhật lần cuối để hiển thị ô mới
+                    checkGameState();
+                }, ANIMATION_DURATION);
+                
+            } else {
+                 checkGameState();
+            }
+        }
+
+        // Checks for win/game over conditions
+        function checkGameState() {
+            if (hasWon && !isGameOver) {
+                isGameOver = true;
+                // Nếu thắng, kiểm tra điểm cao nhất và hiển thị overlay phù hợp
+                if (!checkAndUpdateHighScoreOnGameOver()) {
+                     showOverlay("Bạn đã thắng!", "win");
+                }
+                return;
+            }
+
+            // Check if there are any moves possible (Game Over)
+            if (getEmptyCells().length === 0) {
+                if (!canMove()) {
+                    isGameOver = true;
+                    
+                    // Nếu thua, kiểm tra điểm cao nhất và hiển thị overlay phù hợp
+                    if (!checkAndUpdateHighScoreOnGameOver()) {
+                        showOverlay("Game over!", "lose");
+                    }
+                }
+            }
+        }
+        
+        // Checks if any merge or slide is possible
+        function canMove() {
+            // Check for empty cells
+            if (getEmptyCells().length > 0) return true;
+
+            // Check for horizontal merges
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE - 1; c++) {
+                    if (board[r][c] && board[r][c+1] && board[r][c].value === board[r][c + 1].value) return true;
+                }
+            }
+
+            // Check for vertical merges
+            for (let c = 0; c < GRID_SIZE; c++) {
+                for (let r = 0; r < GRID_SIZE - 1; r++) {
+                    if (board[r][c] && board[r+1][c] && board[r][c].value === board[r + 1][c].value) return true;
+                }
+            }
+
+            return false; // No empty cells and no possible moves/merges
+        }
+
+
+        // Shows the game over or win screen
+        function showOverlay(message, type) {
+            overlayMessage.textContent = message;
+            
+            // Nếu là kỷ lục mới, dùng màu vàng và nút 'Thử lại'
+            const isHighScore = message.startsWith("Kỷ lục mới:");
+            const btnClass = (type === 'win' || isHighScore) 
+                ? 'bg-yellow-600 hover:bg-yellow-700' 
+                : 'bg-[#8f7a66] hover:bg-[#9f8a75]';
+                
+            tryAgainBtn.className = `font-bold py-3 px-6 rounded-lg shadow-xl text-white text-lg transition-all ${btnClass}`;
+            tryAgainBtn.textContent = (type === 'win' && !isHighScore) ? 'Chơi tiếp' : 'Thử lại';
+            
+            overlay.classList.remove('hidden');
+        }
+
+        // --- Event Listeners ---
+        
+        // Game Mode Change Handler
+        gameModeSelector.addEventListener('change', (e) => {
+            gameMode = e.target.value;
+            // Bắt đầu trò chơi mới ngay lập tức khi thay đổi kiểu chơi
+            setupGame(); 
+        });
+
+
+        // Keyboard input handler
+        document.addEventListener('keydown', (e) => {
+            if (isGameOver) return;
+            switch (e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                    e.preventDefault();
+                    move('left');
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                    e.preventDefault();
+                    move('right');
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                    e.preventDefault();
+                    move('up');
+                    break;
+                case 'ArrowDown':
+                case 's':
+                    e.preventDefault();
+                    move('down');
+                    break;
+            }
+        });
+
+        // Touch input handler (for mobile swipe)
+        let touchstartX = 0;
+        let touchstartY = 0;
+        let touchendX = 0;
+        let touchendY = 0;
+        const SWIPE_THRESHOLD = 50;
+
+        gameContainer.addEventListener('touchstart', (e) => {
+            if (isGameOver) return;
+            touchstartX = e.changedTouches[0].screenX;
+            touchstartY = e.changedTouches[0].screenY;
+        }, false);
+
+        gameContainer.addEventListener('touchend', (e) => {
+            if (isGameOver) return;
+            touchendX = e.changedTouches[0].screenX;
+            touchendY = e.changedTouches[0].screenY;
+            handleGesture();
+        }, false);
+
+        function handleGesture() {
+            const dx = touchendX - touchstartX;
+            const dy = touchendY - touchstartY;
+
+            // Check if the distance is sufficient
+            if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) {
+                return; // Not a swipe
+            }
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Horizontal swipe
+                if (dx > 0) move('right');
+                else move('left');
+            } else {
+                // Vertical swipe
+                if (dy > 0) move('down');
+                else move('up');
+            }
+        }
+        
+        // --- Nút điều khiển bằng click ---
+        // Đảm bảo các nút vẫn có listener mặc dù đã ẩn
+        if (btnUp) btnUp.addEventListener('click', () => { move('up'); });
+        if (btnLeft) btnLeft.addEventListener('click', () => { move('left'); });
+        if (btnRight) btnRight.addEventListener('click', () => { move('right'); });
+        if (btnDown) btnDown.addEventListener('click', () => { move('down'); });
+        // --- End Nút điều khiển bằng click ---
+
+        // Thêm listener cho sự kiện resize để đảm bảo kích thước TILE_SIZE_PX được cập nhật khi thay đổi kích thước màn hình
+        window.addEventListener('resize', updateTiles);
+
+
+        // New Game Button
+        newGameBtn.addEventListener('click', setupGame);
+        tryAgainBtn.addEventListener('click', () => {
+             // If player clicks 'Continue' after winning, just hide overlay and let them continue
+            if (hasWon && isGameOver) {
+                isGameOver = false; // Allow further moves
+                overlay.classList.add('hidden');
+                // The win flag (hasWon) remains true so they don't get the win message again
+            } else {
+                setupGame();
+            }
+        });
+
+        // Initialize the game when the page loads
+        window.onload = () => {
+             loadHighScore(); // Tải điểm cao nhất lần đầu
+             setupGame(); 
+        };
+
+    </script>
+
+</body>
+</html>
